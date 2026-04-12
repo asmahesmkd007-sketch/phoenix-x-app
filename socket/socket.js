@@ -5,6 +5,8 @@ const { processMatchResult } = require('../backend/controllers/game.controller')
 let Chess;
 try { Chess = require('chess.js').Chess; } catch { Chess = require('chess.js'); }
 
+const TournamentManager = require('../backend/services/tournament.manager');
+
 // Matchmaking queues per timer: { 1: [], 3: [], 5: [], 10: [] }
 const queues = { 1: [], 3: [], 5: [], 10: [] };
 
@@ -22,7 +24,9 @@ const userSockets = new Map();  // userId  → Set(socketId)
 let onlineCount = 0;
 
 module.exports = (io) => {
+  TournamentManager.init(io);
 
+  // Expose for updates
   io.on('connection', (socket) => {
     onlineCount++;
     broadcastLiveInfo(io);
@@ -34,7 +38,7 @@ module.exports = (io) => {
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
       userSockets.get(userId).add(socket.id);
       
-      // Re-attach socket to any active games to handle page navigation
+      // Attempt to rejoin active generic match
       for (const [matchId, game] of activeGames.entries()) {
         if (game.player1.userId === userId) {
           game.player1.socketId = socket.id;
@@ -49,6 +53,15 @@ module.exports = (io) => {
         await supabase.from('profiles').update({ is_online: true, last_seen: new Date().toISOString() }).eq('id', userId);
       } catch {}
       socket.emit('authenticated', { success: true });
+    });
+
+    // ─── TOURNAMENT MGR EVENTS ──────────────────────────────
+    socket.on('rejoin_tr_match', ({ matchId, userId }) => {
+        TournamentManager.rejoinMatch(socket, matchId, userId);
+    });
+
+    socket.on('make_tr_move', ({ matchId, moveSan, userId }) => {
+        TournamentManager.handleMove(userId, matchId, moveSan);
     });
 
     // ─── RANDOM MATCHMAKING ──────────────────────────────────

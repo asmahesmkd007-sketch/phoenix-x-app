@@ -284,6 +284,7 @@
     let oppTime = 5 * 60;
     let timerInterval = null;
     let selectedSquare = null;
+    let isKnockout = false;
 
     const sock = initSocket();
 
@@ -304,8 +305,62 @@
       startGlobalTimer();
       renderLeaderboard(res.tournament.players || []);
 
-      // Connect to queue
-      startSearching();
+      if (tournamentConfig.type === 'paid') {
+          isKnockout = true;
+          setupPaidTournamentLobby();
+      } else {
+          startSearching(); // Generic free tournament random queue
+      }
+    }
+
+    function setupPaidTournamentLobby() {
+        // Recover match on refresh 
+        const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
+        if (storedMatch) {
+             sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
+        } else {
+             showLobby('Lobby Waiting Area', 'Waiting for Server. Matches start automatically.', false, false);
+        }
+
+        sock.on(`tournament_sync_${tournamentId}`, (state) => {
+             if (gameActive) return; // Don't disrupt active gameplay UI 
+             
+             if (state.status === 'lobby_wait') {
+                  showLobby('Tournament Begins In:', fmt.countdown(state.countdown), false, false);
+             } else if (state.status === 'playing') {
+                  showLobby(`Round ${state.round} Ongoing`, `Matches are currently being played. Waiting for your slot or round completion.`, true, false);
+             } else if (state.status === 'rest') {
+                  showLobby(`Round Finished`, `Awesome! Next round brackets generating in ${state.countdown}s`, false, false);
+             } else if (state.status === 'leaderboard_wait') {
+                  showLobby(`Qualifiers Ended`, `Calculating Top players... ${state.countdown}s`, false, false);
+                  refreshLeaderboard();
+             } else if (state.status === 'completed') {
+                  if (globalCountdownInterval) clearInterval(globalCountdownInterval);
+                  showLobby('Tournament Ended', 'All rounds completed! Checking results...', false);
+                  setTimeout(()=> refreshLeaderboard(), 2000);
+             }
+        });
+        
+        sock.on('match_found_tr', (data) => {
+             matchId = data.matchId;
+             localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
+             setupGame(data.color, data.opponent);
+        });
+
+        sock.on('match_rejoined', (data) => {
+             matchId = data.roomId.replace('tr_', '');
+             chess.load(data.fen);
+             setupGame(data.color, data.opponent, data.fen);
+             myTime = data.color === 'white' ? data.white_time : data.black_time;
+             oppTime = data.color === 'white' ? data.black_time : data.white_time;
+             document.getElementById('my-timer').textContent = fmt.countdown(myTime);
+             document.getElementById('opp-timer').textContent = fmt.countdown(oppTime);
+        });
+
+        sock.on('tournament_eliminated', () => {
+             localStorage.removeItem(`px_active_match_${tournamentId}`);
+             showLobby('Eliminated 😔', 'You were knocked out. Stick around to watch the leaderboard!', false, true, 'Back to Dashboard', ()=>window.location.href='/pages/dashboard.html');
+        });
     }
 
     function startGlobalTimer() {
@@ -450,16 +505,17 @@ function cancelSearch() {
 }
 
 // ─── GAME LOGIC ───
-function setupGame(color, opponent) {
+function setupGame(color, opponent, fen = 'start') {
   gameActive = true;
   myColor = color;
   myTime = matchTimerType * 60;
   oppTime = matchTimerType * 60;
   chess = new Chess();
+  if(fen !== 'start') chess.load(fen);
 
   document.getElementById('opp-name').textContent = fmt.username(opponent.username);
   document.getElementById('opp-avatar').textContent = opponent.username.replace('@', '')[0].toUpperCase();
-  document.getElementById('opp-rating').textContent = 'Live Match';
+  document.getElementById('opp-rating').textContent = 'Live Knockout Match';
 
   document.getElementById('lobby-status').classList.add('hidden');
   document.getElementById('game-ui').style.display = 'flex';
@@ -527,7 +583,11 @@ function executeMove(from, to, promotion) {
   removeHighlights();
   board.position(chess.fen());
   updatePlayerBars();
-  SocketActions.makeMove(matchId, { from, to, promotion }, user.id);
+  if (isKnockout) {
+      sock.emit('make_tr_move', { matchId, moveSan: move.san, userId: user.id });
+  } else {
+      SocketActions.makeMove(matchId, { from, to, promotion }, user.id);
+  }
   return true;
 }
 
