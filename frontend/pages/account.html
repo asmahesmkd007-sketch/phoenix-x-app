@@ -9,14 +9,18 @@
     .profile-avatar-wrap { position: relative; cursor: pointer; }
     .profile-avatar { width: 84px; height: 84px; border-radius: 50%; border: 3px solid #5bc0eb; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; background: linear-gradient(135deg,#3da8d2,#5bc0eb); color: #000; flex-shrink: 0; overflow: hidden; }
     .avatar-edit { position: absolute; bottom: 0; right: 0; background: #5bc0eb; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid var(--bg-primary); }
-    .kyc-steps { display: flex; gap: 8px; margin-bottom: 20px; }
-    .kyc-step { flex: 1; padding: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; text-align: center; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .kyc-steps { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .kyc-step { flex: 1; min-width: 100px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; text-align: center; font-size: 12px; cursor: pointer; transition: all 0.2s; }
     .kyc-step.active { border-color: #5bc0eb; background: rgba(91,192,235,0.08); color: #5bc0eb; }
     .kyc-step.done { border-color: var(--success); background: rgba(34,197,94,0.08); color: var(--success); }
     .strength-bar { height: 4px; border-radius: 4px; margin-top: 6px; transition: all 0.3s; }
     .strength-weak { background: var(--error); width: 33%; }
     .strength-medium { background: var(--warning); width: 66%; }
     .strength-strong { background: var(--success); width: 100%; }
+    @media (max-width: 768px) {
+      .profile-header { flex-direction: column; text-align: center; padding: 20px; gap: 16px; }
+      .profile-header > div:nth-child(2) > div:last-child { justify-content: center; }
+    }
   </style>
 </head>
 <body>
