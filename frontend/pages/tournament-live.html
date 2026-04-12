@@ -679,6 +679,11 @@ sock.on('game_over', (data) => {
   const isDraw = data.result === 'draw';
 
   let msg = isDraw ? "Match Drawn. +10 Points" : (won ? "You Won! +15 Points" : "You Lost. -5 Points");
+  
+  if (data.reason === 'cheat_detected' && won) {
+     msg = "Opponent Banned! You Won! +15 Points";
+  }
+  
   showLobby('Match Over', msg, false, true, 'Next Match (Auto in 3s)', startSearching);
 
   // Auto next match in 3 seconds
@@ -691,8 +696,53 @@ sock.on('game_over', (data) => {
 // Periodic LB refresh
 setInterval(refreshLeaderboard, 15000);
 
+// ─── ANTI-CHEAT DETECTION ───
+let cheatStrikes = 0;
+
+function antiCheatWarning() {
+   if (!gameActive) return;
+   let warn = document.getElementById('cheat-warn-overlay');
+   if (!warn) {
+      warn = document.createElement('div');
+      warn.id = 'cheat-warn-overlay';
+      warn.style.position = 'fixed'; warn.style.inset = '0';
+      warn.style.background = 'rgba(230, 40, 40, 0.98)';
+      warn.style.zIndex = '999999'; warn.style.display = 'flex';
+      warn.style.flexDirection = 'column'; warn.style.alignItems = 'center';
+      warn.style.justifyContent = 'center'; warn.style.color = '#fff';
+      warn.style.textAlign = 'center'; warn.style.padding = '40px';
+      warn.innerHTML = `
+         <i class="fa-solid fa-triangle-exclamation" style="font-size:100px; margin-bottom:20px; color:#fff;"></i>
+         <h1 style="font-family:var(--font-display); font-size:40px; font-weight:900; margin-bottom:10px; text-transform:uppercase;">Anti-Cheat Warning</h1>
+         <p style="font-size:18px; max-width:600px; margin-bottom:30px;">
+            Leaving the match or minimizing the browser is strictly prohibited. If you use a chess engine/bot, your account will be <b>BANNED</b> and coins <b>CONFISCATED</b>.
+         </p>
+         <button class="btn btn-secondary btn-lg" style="color:#000" onclick="document.getElementById('cheat-warn-overlay').style.display='none'">I Understand, Return to Match</button>
+      `;
+      document.body.appendChild(warn);
+   }
+   warn.style.display = 'flex';
+}
+
+function handleCheatViolation() {
+   if (!gameActive) return;
+   cheatStrikes++;
+   if (cheatStrikes === 1) {
+      antiCheatWarning();
+   } else if (cheatStrikes >= 2) {
+      sock.emit('cheat_detected', { matchId, userId: user.id });
+      gameActive = false;
+   }
+}
+
+document.addEventListener("visibilitychange", () => {
+   if (document.hidden && gameActive) handleCheatViolation();
+});
+window.addEventListener("blur", () => {
+   if (gameActive) handleCheatViolation();
+});
+
 initTournament();
   </script>
 </body>
-
 </html>

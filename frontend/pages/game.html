@@ -713,6 +713,7 @@ sock.on('game_over', (data) => {
   if (data.reason === 'disconnect') reasonMsg = 'Opponent disconnected';
   else if (data.reason === 'abandoned') reasonMsg = 'Match abandoned (No move in 30s)';
   else if (data.reason === 'timeout') reasonMsg = 'Time out';
+  else if (data.reason === 'cheat_detected') reasonMsg = 'Opponent banned for cheating';
   
   document.getElementById('result-iq').textContent = reasonMsg;
 });
@@ -734,6 +735,53 @@ if (mode === 'bot') {
 document.getElementById('game-status').innerHTML = myColor === 'white' ? '<i class="fa-solid fa-circle" style="color:var(--success);"></i> Your turn (White)' : '⏳ Waiting (Black)';
 document.getElementById('game-title').innerHTML = mode === 'bot' ? `<i class="fa-solid fa-chess-pawn"></i> vs Bot (IQ ${botIQ})` : '<i class="fa-solid fa-chess-pawn"></i> LIVE GAME';
 Toast.info(mode === 'bot' ? `Playing vs Bot (IQ ${botIQ})` : 'Game started! Good luck!');
+
+// ─── ANTI-CHEAT DETECTION ───
+let cheatStrikes = 0;
+
+function antiCheatWarning() {
+   if (!gameActive || mode === 'bot') return; // Don't ban people playing vs bot
+   let warn = document.getElementById('cheat-warn-overlay');
+   if (!warn) {
+      warn = document.createElement('div');
+      warn.id = 'cheat-warn-overlay';
+      warn.style.position = 'fixed'; warn.style.inset = '0';
+      warn.style.background = 'rgba(230, 40, 40, 0.98)';
+      warn.style.zIndex = '999999'; warn.style.display = 'flex';
+      warn.style.flexDirection = 'column'; warn.style.alignItems = 'center';
+      warn.style.justifyContent = 'center'; warn.style.color = '#fff';
+      warn.style.textAlign = 'center'; warn.style.padding = '40px';
+      warn.innerHTML = `
+         <i class="fa-solid fa-triangle-exclamation" style="font-size:100px; margin-bottom:20px; color:#fff;"></i>
+         <h1 style="font-family:var(--font-display); font-size:40px; font-weight:900; margin-bottom:10px; text-transform:uppercase;">Anti-Cheat Warning</h1>
+         <p style="font-size:18px; max-width:600px; margin-bottom:30px;">
+            Leaving the match or minimizing the browser is strictly prohibited. If you use a chess engine/bot, your account will be <b>BANNED</b> and coins <b>CONFISCATED</b>.
+         </p>
+         <button class="btn btn-secondary btn-lg" style="color:#000" onclick="document.getElementById('cheat-warn-overlay').style.display='none'">I Understand, Return to Match</button>
+      `;
+      document.body.appendChild(warn);
+   }
+   warn.style.display = 'flex';
+}
+
+function handleCheatViolation() {
+   if (!gameActive || mode === 'bot') return;
+   cheatStrikes++;
+   if (cheatStrikes === 1) {
+      antiCheatWarning();
+   } else if (cheatStrikes >= 2) {
+      sock.emit('cheat_detected', { matchId, userId: user.id });
+      gameActive = false;
+   }
+}
+
+document.addEventListener("visibilitychange", () => {
+   if (document.hidden && gameActive) handleCheatViolation();
+});
+window.addEventListener("blur", () => {
+   if (gameActive) handleCheatViolation();
+});
+
 </script>
 </body>
 </html>

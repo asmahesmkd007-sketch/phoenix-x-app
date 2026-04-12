@@ -266,6 +266,56 @@ module.exports = (io) => {
       await endGame(io, matchId, game, 'draw', null, 'agreement');
     });
 
+    // ─── ANTI-CHEAT ──────────────────────────────────────────
+    socket.on('cheat_detected', async ({ matchId, userId }) => {
+      const game = activeGames.get(matchId);
+      if (!game) return;
+      if (game.player1.userId !== userId && game.player2.userId !== userId) return;
+
+      const isP1 = game.player1.userId === userId;
+      const winnerId = isP1 ? game.player2.userId : game.player1.userId;
+      const result = isP1 ? 'player2_win' : 'player1_win';
+
+      // 1. Terminate the game, assigning win to innocent player
+      await endGame(io, matchId, game, result, winnerId, 'cheat_detected');
+
+      // 2. Ban and Asset Confiscation
+      try {
+        await supabase.from('profiles').update({ status: 'banned', is_online: false }).eq('id', userId);
+
+        const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
+        const confAmount = Number(wallet?.balance || 0);
+
+        if (confAmount > 0) {
+          await supabase.from('wallets').update({ balance: 0 }).eq('user_id', userId);
+
+          // Find master admin wallet and transfer confiscated wrapper
+          const { data: admin } = await supabase.from('profiles').select('id').eq('is_admin', true).limit(1).single();
+          if (admin) {
+             const { data: adminWallet } = await supabase.from('wallets').select('balance').eq('user_id', admin.id).single();
+             const newBal = Number(adminWallet?.balance || 0) + confAmount;
+             await supabase.from('wallets').update({ balance: newBal }).eq('user_id', admin.id);
+             
+             await supabase.from('transactions').insert({
+               user_id: admin.id, type: 'deposit', amount: confAmount, status: 'success',
+               description: 'Coins confiscated from banned cheater', balance_after: newBal
+             });
+          }
+
+          // Cheater penalty log
+          await supabase.from('transactions').insert({
+             user_id: userId, type: 'penalty', amount: confAmount, status: 'success',
+             description: 'Coins confiscated for cheating', balance_after: 0
+          });
+        }
+        
+        socket.emit('game_over', { result: 'banned', reason: 'You were banned for cheating.' });
+        socket.disconnect(true);
+      } catch(e) {
+        console.error("Anti-cheat confiscation error:", e);
+      }
+    });
+
     // ─── DISCONNECT ──────────────────────────────────────────
     socket.on('disconnect', async () => {
       onlineCount = Math.max(0, onlineCount - 1);
