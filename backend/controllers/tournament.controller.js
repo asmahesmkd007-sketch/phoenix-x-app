@@ -3,7 +3,7 @@ const { supabase } = require('../config/supabase');
 const getTournaments = async (req, res) => {
   try {
     const { type, status } = req.query;
-    let query = supabase.from('tournaments').select('*').order('start_time', { ascending: true }).limit(20);
+    let query = supabase.from('tournaments').select('*').order('start_time', { ascending: true }).limit(100);
     if (type) query = query.eq('type', type);
     if (status) query = query.eq('status', status);
     else query = query.in('status', ['upcoming', 'live']);
