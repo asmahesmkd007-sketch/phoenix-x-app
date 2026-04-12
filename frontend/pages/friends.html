@@ -245,6 +245,14 @@ async function removeFriend(id, name) {
 loadRequests();
 loadFriends();
 setInterval(() => { loadRequests(); loadFriends(); }, 15000);
+
+// Auto-add @ to search input
+const searchInput = document.getElementById('add-search');
+searchInput.addEventListener('input', function() {
+  if (this.value && !this.value.startsWith('@')) {
+    this.value = '@' + this.value;
+  }
+});
 </script>
 </body>
 </html>

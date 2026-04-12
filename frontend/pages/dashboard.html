@@ -46,9 +46,11 @@
               </div>
             </div>
           </div>
-          <div class="flex gap-12">
-            <a href="/pages/play.html" class="btn btn-primary"><i class="fa-solid fa-chess-pawn"></i> Play Now</a>
-            <a href="/pages/paid-tournament.html" class="btn btn-orange"><i class="fa-solid fa-trophy"></i> Tournament</a>
+          <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+            <div class="flex gap-12">
+              <a href="/pages/play.html" class="btn btn-primary"><i class="fa-solid fa-chess-pawn"></i> Play Now</a>
+              <a href="/pages/paid-tournament.html" class="btn btn-orange"><i class="fa-solid fa-trophy"></i> Tournament</a>
+            </div>
             <a href="/pages/wallet.html" class="btn btn-secondary"><i class="fa-solid fa-coins"></i> Wallet</a>
           </div>
         </div>
@@ -278,7 +280,7 @@ async function loadDashboard() {
       </div>`).join('');
   }
   // Friends loader
-  if(window.FriendAPI) {
+  if(typeof FriendAPI !== 'undefined') {
     const friendRes = await FriendAPI.getFriends();
     const dashFEl = document.getElementById('dash-online-friends');
     if(dashFEl && friendRes?.success) {
@@ -296,6 +298,8 @@ async function loadDashboard() {
           </div>
         `).join('');
       }
+    } else if (dashFEl) {
+        dashFEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:11px">Failed to load friends.</div>';
     }
   }
 }
