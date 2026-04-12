@@ -399,12 +399,25 @@ tbody tr.highlight { background: rgba(0,161,155,0.06); }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+  .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; box-shadow: 10px 0 30px rgba(0,0,0,0.5); width: 280px; max-width: 80vw; }
   .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; }
+  .main-content { margin-left: 0; width: 100%; }
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .page-content { padding: 16px; }
   .mobile-menu-btn { display: block; }
+  
+  /* Topbar Mobile Fixes */
+  .topbar { padding: 0 16px; gap: 8px; }
+  .page-title { font-size: 13px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-player-id { display: none; }
+  .topbar-right { gap: 12px; }
+  
+  /* Tab Wrapping */
+  .tabs { flex-wrap: wrap; justify-content: center; width: 100%; border-radius: 12px; }
+  .tab-btn { flex: 1 1 calc(50% - 8px); text-align: center; padding: 10px 8px; font-size: 12px; }
+  
+  /* Modal scale down */
+  .modal { padding: 20px; }
 }
 
 /* PULSE ANIMATION */
