@@ -61,14 +61,11 @@ require('../socket/socket')(io);
 // ─── SCHEDULERS ───────────────────────────────────────────
 const { autoCreateFreeTournaments, updateTournamentStatuses } = require('./controllers/tournament.controller');
 
-// Auto-create free tournaments every 30 minutes
-setInterval(autoCreateFreeTournaments, 30 * 60 * 1000);
-
 // Update tournament statuses every 30 seconds
 setInterval(updateTournamentStatuses, 30 * 1000);
 
-// Create initial batch of free tournaments on startup
-setTimeout(autoCreateFreeTournaments, 3000);
+// Create initial batch of free tournaments on startup (if none exist)
+setTimeout(() => autoCreateFreeTournaments(), 3000);
 
 // ─── CATCH-ALL → SERVE FRONTEND ───────────────────────────
 app.get('*', (req, res) => {

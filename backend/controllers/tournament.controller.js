@@ -82,18 +82,25 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-// Auto-create free tournaments (called by scheduler)
-const autoCreateFreeTournaments = async () => {
+// Auto-create free tournaments
+const autoCreateFreeTournaments = async (customStartTime, customEndTime) => {
   try {
     const timers = [1, 3, 5, 10];
-    const startTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    const endTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const startTime = customStartTime || new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const endTime = customEndTime || new Date(new Date(startTime).getTime() + 30 * 60 * 1000).toISOString();
+    
+    // Check if we already have upcoming free tournaments for this EXACT start time to prevent duplicates
+    const { data: existing } = await supabase.from('tournaments')
+      .select('id').eq('type', 'free').eq('status', 'upcoming').eq('start_time', startTime);
+      
+    if (existing && existing.length > 0) return;
+
     const rows = timers.map(t => ({
       name: `Free ${t}min Tournament`, type: 'free', timer_type: t,
       max_players: 500, start_time: startTime, end_time: endTime, duration_minutes: 30,
     }));
     await supabase.from('tournaments').insert(rows);
-    console.log('✅ Auto-created free tournaments');
+    console.log(`✅ Auto-created free tournaments for ${startTime}`);
   } catch (err) {
     console.error('Auto-create error:', err);
   }
@@ -190,9 +197,24 @@ const updateTournamentStatuses = async () => {
     const now = new Date().toISOString();
     
     // Upcoming -> Live
-    await supabase.from('tournaments')
-      .update({ status: 'live', phase: 'qualifier' })
+    const { data: goingLive } = await supabase.from('tournaments')
+      .select('*')
       .eq('status', 'upcoming').lte('start_time', now);
+      
+    if (goingLive && goingLive.length > 0) {
+      for (const t of goingLive) {
+        await supabase.from('tournaments').update({ status: 'live', phase: 'qualifier' }).eq('id', t.id);
+      }
+      
+      // Feature: Immediately as a free tournament goes live, spawn the NEXT upcoming batch!
+      const freeGoingLive = goingLive.filter(t => t.type === 'free');
+      if (freeGoingLive.length > 0) {
+        const newlyLiveEndTime = freeGoingLive[0].end_time;
+        const nextStart = new Date(newlyLiveEndTime);
+        const nextEnd = new Date(nextStart.getTime() + 30 * 60 * 1000);
+        await autoCreateFreeTournaments(nextStart.toISOString(), nextEnd.toISOString());
+      }
+    }
       
     // Handle Live format phases
     const { data: active } = await supabase.from('tournaments').select('*').eq('status', 'live');
