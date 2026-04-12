@@ -426,3 +426,7 @@ module.exports = (io) => {
     io.emit('live_info', { online_users: onlineCount, active_matches: activeGames.size });
   }
 };
+
+module.exports.isUserOnline = (userId) => {
+  return userSockets.has(userId) && userSockets.get(userId).size > 0;
+};

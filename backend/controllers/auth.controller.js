@@ -112,6 +112,12 @@ const login = async (req, res) => {
 
     const userId = data.user.id;
 
+    // Check if user is already online elsewhere
+    const socketModule = require('../../socket/socket');
+    if (socketModule.isUserOnline && socketModule.isUserOnline(userId)) {
+      return res.status(403).json({ success: false, message: 'Your account is already active on another device or browser. Access denied.' });
+    }
+
     // Get profile + wallet
     const [{ data: profile }, { data: wallet }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
@@ -197,6 +203,12 @@ const oauthLogin = async (req, res) => {
 
     const userId = authUser.id;
     const email = authUser.email;
+
+    // Check if user is already online elsewhere
+    const socketModule = require('../../socket/socket');
+    if (socketModule.isUserOnline && socketModule.isUserOnline(userId)) {
+      return res.status(403).json({ success: false, message: 'Your account is already active on another device or browser. Access denied.' });
+    }
 
     // Check if profile exists
     let { data: profile } = await supabase
