@@ -547,23 +547,50 @@ function setupGame(color, opponent, fen = 'start') {
   updatePlayerBars();
 }
 
+function executeMove(from, to, promotion) {
+  const move = chess.move({ from, to, promotion });
+  if (move === null) return false;
+  
+  removeHighlights();
+  selectedSquare = null;
+  board.position(chess.fen());
+  
+  SocketActions.makeMove(matchId, { from: move.from, to: move.to, promotion }, user.id);
+  updatePlayerBars();
+  return true;
+}
+
+function handlePromotion(source, target) {
+  const modal = document.getElementById('promotion-modal');
+  const options = document.getElementById('promotion-options');
+  options.innerHTML = '';
+  
+  const color = chess.turn(); 
+  const pieces = ['q', 'r', 'b', 'n'];
+
+  pieces.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'promotion-piece';
+    const pieceImg = `https://chessboardjs.com/img/chesspieces/wikipedia/${color.toUpperCase()}${p.toUpperCase()}.png`;
+    el.innerHTML = `<img src="${pieceImg}" width="45" style="cursor:pointer">`;
+    el.onclick = () => {
+       modal.style.display = 'none';
+       executeMove(source, target, p);
+    };
+    options.appendChild(el);
+  });
+  
+  modal.style.display = 'flex';
+}
+
 function removeHighlights() { $('#board .square-55d63').removeClass('highlight-move highlight-selected'); }
 function highlight(sq, type) { $('#board .square-' + sq).addClass('highlight-' + type); }
 
 function onDragStart(source, piece) {
   if (!gameActive || chess.game_over()) return false;
+  
   const myColorChar = myColor === 'white' ? 'w' : 'b';
   const isMyPiece = piece.charAt(0) === myColorChar;
-
-  if (selectedSquare && !isMyPiece) {
-    const moves = chess.moves({ square: selectedSquare, verbose: true });
-    const move = moves.find(m => m.to === source);
-    if (move) {
-      if (move.flags.includes('p')) handlePromotion(selectedSquare, source);
-      else executeMove(selectedSquare, source, 'q');
-      return false;
-    }
-  }
 
   if (chess.turn() !== myColorChar || !isMyPiece) return false;
 
@@ -576,14 +603,16 @@ function onDragStart(source, piece) {
 
 function onDrop(source, target) {
   if (source === target) return;
-  removeHighlights();
+  
   const moves = chess.moves({ square: source, verbose: true });
-  const isLegal = moves.some(m => m.to === target);
-  if (!isLegal) return 'snapback';
-
   const move = moves.find(m => m.to === target);
+  
+  if (!move) return 'snapback';
+  
+  removeHighlights();
   selectedSquare = null;
-  if (move && move.flags.includes('p')) {
+  
+  if (move.flags.includes('p')) {
      handlePromotion(source, target);
   } else {
      executeMove(source, target, 'q');
@@ -605,13 +634,32 @@ function highlightSquare(square, type) {
 }
 
 $(document).on('mousedown touchstart', '#board .square-55d63', function() {
-  if (!gameActive || !selectedSquare) return;
+  if (!gameActive || chess.game_over()) return;
   const square = $(this).attr('data-square');
-  const moves = chess.moves({ square: selectedSquare, verbose: true });
-  const move = moves.find(m => m.to === square);
-  if (move) {
-    if (move.flags.includes('p')) handlePromotion(selectedSquare, square);
-    else executeMove(selectedSquare, square, 'q');
+  
+  // 1. If we already have a selected piece, try to move to this square
+  if (selectedSquare && selectedSquare !== square) {
+    const moves = chess.moves({ square: selectedSquare, verbose: true });
+    const move = moves.find(m => m.to === square);
+    if (move) {
+      if (move.flags.includes('p')) handlePromotion(selectedSquare, square);
+      else executeMove(selectedSquare, square, 'q');
+      return;
+    }
+  }
+
+  // 2. Otherwise, if it's our piece, select it
+  const piece = chess.get(square);
+  const myColorChar = myColor === 'white' ? 'w' : 'b';
+  if (piece && piece.color === myColorChar) {
+    removeHighlights();
+    selectedSquare = square;
+    highlightSquare(square, 'selected');
+    const moves = chess.moves({ square: square, verbose: true });
+    moves.forEach(m => highlightSquare(m.to, 'move'));
+  } else {
+    removeHighlights();
+    selectedSquare = null;
   }
 });
 

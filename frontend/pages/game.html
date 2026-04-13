@@ -256,18 +256,38 @@ function selectPromotion(piece) {
   }
 }
 
-// Ensure clicking empty squares works
+// Handle manual square clicks (Click-to-Move)
 $(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
-  if (!gameActive || chess.game_over() || !selectedSquare) return;
+  if (!gameActive || chess.game_over()) return;
   const square = $(this).attr('data-square');
-  const moves = chess.moves({ square: selectedSquare, verbose: true });
-  const move = moves.find(m => m.to === square);
-  if (move) {
-    if (move.flags.includes('p')) {
-      handlePromotion(selectedSquare, square);
-    } else {
-      executeMove(selectedSquare, square, 'q');
+  
+  // 1. If we already have a selected piece, try to move to this square
+  if (selectedSquare && selectedSquare !== square) {
+    const moves = chess.moves({ square: selectedSquare, verbose: true });
+    const move = moves.find(m => m.to === square);
+    if (move) {
+      if (move.flags.includes('p')) {
+        handlePromotion(selectedSquare, square);
+      } else {
+        executeMove(selectedSquare, square, 'q');
+      }
+      return;
     }
+  }
+
+  // 2. Otherwise, if it's our piece, select it
+  const piece = chess.get(square);
+  const myColorChar = myColor === 'white' ? 'w' : 'b';
+  if (piece && piece.color === myColorChar) {
+    removeHighlights();
+    selectedSquare = square;
+    highlightSquare(square, 'selected');
+    const moves = chess.moves({ square: square, verbose: true });
+    moves.forEach(m => highlightSquare(m.to, 'move'));
+  } else {
+    // Clicked empty or enemy without a selected piece
+    removeHighlights();
+    selectedSquare = null;
   }
 });
 
@@ -308,30 +328,14 @@ function initBoard() {
 }
 
 function onDragStart(source, piece) {
-  if (!gameActive) return false;
-  if (chess.game_over()) return false;
+  if (!gameActive || chess.game_over()) return false;
   
   const myColorChar = myColor === 'white' ? 'w' : 'b';
   const isMyPiece = piece.charAt(0) === myColorChar;
 
-  // Handle capture by clicking enemy piece
-  if (selectedSquare && !isMyPiece) {
-    const moves = chess.moves({ square: selectedSquare, verbose: true });
-    const move = moves.find(m => m.to === source);
-    if (move) {
-      if (move.flags.includes('p')) {
-        handlePromotion(selectedSquare, source);
-      } else {
-        executeMove(selectedSquare, source, 'q');
-      }
-      return false; // Prevent drag
-    }
-  }
+  if (chess.turn() !== myColorChar || !isMyPiece) return false;
 
-  if (chess.turn() !== myColorChar) return false;
-  if (!isMyPiece) return false;
-
-  // Show highlights for clicked piece
+  // Visual selection feedback
   removeHighlights();
   selectedSquare = source;
   highlightSquare(source, 'selected');
@@ -340,14 +344,17 @@ function onDragStart(source, piece) {
 }
 
 function onDrop(source, target) {
-  if (source === target) return; // Released on the same square (click to select mode)
+  if (source === target) return;
+  
+  const moves = chess.moves({ square: source, verbose: true });
+  const move = moves.find(m => m.to === target);
+  
+  if (!move) return 'snapback';
   
   removeHighlights();
-  if (!isLegal) return 'snapback';
-  
   selectedSquare = null;
-  const move = moves.find(m => m.to === target);
-  if (move && move.flags.includes('p')) {
+  
+  if (move.flags.includes('p')) {
     handlePromotion(source, target);
   } else {
     executeMove(source, target, 'q');
