@@ -11,8 +11,8 @@ const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server, {
   cors: { origin: process.env.FRONTEND_URL || '*', methods: ['GET', 'POST'] },
-  pingTimeout: 60000,
-  pingInterval: 25000,
+  pingTimeout: 10000, // Detect dead sockets in 10s
+  pingInterval: 5000, // Check every 5s
 });
 
 // ─── MIDDLEWARE ───────────────────────────────────────────

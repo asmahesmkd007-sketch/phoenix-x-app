@@ -29,7 +29,7 @@ module.exports = (io) => {
 
   // Expose for updates
   io.on('connection', (socket) => {
-    onlineCount++;
+    // Standard broadcast on connection to all, with unique user count
     broadcastLiveInfo(io);
 
     // ─── AUTHENTICATE ───────────────────────────────────────
@@ -45,12 +45,9 @@ module.exports = (io) => {
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
       userSockets.get(userId).add(socket.id);
       
-      // Update online count to be number of unique authenticated users
-      onlineCount = userSockets.size;
-      broadcastLiveInfo(io);
-
       // Force live info sync to client directly once authenticated successfully
-      socket.emit('live_info', { online_users: onlineCount, active_matches: activeGames.size });
+      broadcastLiveInfo(io);
+      socket.emit('live_info', { online_users: userSockets.size, active_matches: activeGames.size });
 
       
       // Attempt to rejoin active generic match
@@ -475,6 +472,6 @@ module.exports = (io) => {
   }
 
   function broadcastLiveInfo(io) {
-    io.emit('live_info', { online_users: onlineCount, active_matches: activeGames.size });
+    io.emit('live_info', { online_users: userSockets.size, active_matches: activeGames.size });
   }
 };

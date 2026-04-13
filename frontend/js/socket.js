@@ -5,8 +5,10 @@ const initSocket = () => {
 
   _socket = io(window.location.origin, {
     transports: ['websocket', 'polling'],
-    reconnectionAttempts: 5,
-    reconnectionDelay: 2000,
+    reconnectionAttempts: Infinity, // Never give up reconnecting
+    reconnectionDelay: 1000,        // Reconnect faster
+    reconnectionDelayMax: 5000,     // Cap the delay
+    timeout: 10000                  // Detect drop faster
   });
 
   _socket.on('connect', () => {
@@ -16,9 +18,17 @@ const initSocket = () => {
     }
   });
 
-  _socket.on('live_info', ({ online_users, active_matches }) => {
-    document.querySelectorAll('[data-live="online"]').forEach(el => el.textContent = (online_users||0).toLocaleString());
-    document.querySelectorAll('[data-live="matches"]').forEach(el => el.textContent = (active_matches||0).toLocaleString());
+  _socket.on('live_info', (data) => {
+    if (!data) return; // Keep last known values if data is missing
+    const { online_users, active_matches } = data;
+    
+    // Only update if we actually got numbers (ignore temporary 0s if they feel like flickering)
+    document.querySelectorAll('[data-live="online"]').forEach(el => {
+       if (online_users !== undefined) el.textContent = online_users.toLocaleString();
+    });
+    document.querySelectorAll('[data-live="matches"]').forEach(el => {
+       if (active_matches !== undefined) el.textContent = active_matches.toLocaleString();
+    });
   });
 
   _socket.on('disconnect', () => console.log('<i class="fa-solid fa-plug"></i> Socket disconnected'));
