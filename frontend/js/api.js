@@ -42,7 +42,8 @@ const api = async (endpoint, options = {}, retry = true) => {
     });
 
     // Token expired → try refresh once
-    if (res.status === 401 && retry && !_refreshing) {
+    const isAuthRoute = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
+    if (res.status === 401 && retry && !_refreshing && !isAuthRoute) {
       _refreshing = true;
       const refreshed = await tryRefreshToken();
       _refreshing = false;
