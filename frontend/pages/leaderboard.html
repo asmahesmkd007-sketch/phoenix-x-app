@@ -57,11 +57,14 @@
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="/js/api.js"></script>
+<script src="/js/socket.js"></script>
 <script>
 if (!requireAuth()) throw new Error();
 const user = getUser();
 loadSidebar();
+initSocket();
 document.getElementById('tb-pid').textContent = user.player_id;
 if (user.profile_image) {
   document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;

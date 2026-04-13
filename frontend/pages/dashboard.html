@@ -206,11 +206,18 @@ document.getElementById('dash-rank-badge').textContent = user.rank || 'Bronze';
 
 // Load data
 async function loadDashboard() {
-  const [walletRes, statsRes, historyRes, tournamentsRes, notifRes] = await Promise.all([
-    WalletAPI.getBalance(), UserAPI.getStats(), GameAPI.getHistory('all', 1), TournamentAPI.getAll(null, 'live'), UserAPI.getNotifications()
-  ]);
+  const tryLoad = async (promise) => { try { return await promise; } catch (e) { console.error(e); return { success: false }; } };
 
-  if (walletRes?.success) document.getElementById('stat-balance').textContent = walletRes.wallet.balance?.toLocaleString() || '0';
+  const walletRes = await tryLoad(WalletAPI.getBalance());
+  const statsRes = await tryLoad(UserAPI.getStats());
+  const historyRes = await tryLoad(GameAPI.getHistory('all', 1));
+  const tournamentsRes = await tryLoad(TournamentAPI.getAll(null, 'live'));
+  const notifRes = await tryLoad(UserAPI.getNotifications());
+
+  if (walletRes?.success) {
+     document.getElementById('stat-balance').textContent = walletRes.wallet.balance?.toLocaleString() || '0';
+  }
+  
   if (statsRes?.success) {
     const s = statsRes.stats;
     document.getElementById('stat-matches').textContent = s.total_matches || 0;

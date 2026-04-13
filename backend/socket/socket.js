@@ -44,6 +44,10 @@ module.exports = (io) => {
       userToSocket.set(userId, socket.id);
       if (!userSockets.has(userId)) userSockets.set(userId, new Set());
       userSockets.get(userId).add(socket.id);
+      
+      // Update online count to be number of unique authenticated users
+      onlineCount = userSockets.size;
+      broadcastLiveInfo(io);
 
       // Force live info sync to client directly once authenticated successfully
       socket.emit('live_info', { online_users: onlineCount, active_matches: activeGames.size });
@@ -364,6 +368,8 @@ module.exports = (io) => {
         }
       }
 
+      // Recalculate unique online users on any disconnection
+      onlineCount = userSockets.size;
       broadcastLiveInfo(io);
     });
   });
