@@ -53,9 +53,9 @@
         <div class="page-title" id="game-title"><i class="fa-solid fa-chess-pawn"></i> CHESS GAME</div>
         <div class="live-badge"><div class="live-dot"></div> LIVE</div>
       </div>
-      <div class="topbar-right">
-        <button id="btn-undo" class="btn btn-secondary btn-sm" style="display:none" onclick="undoMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
-        <button class="btn btn-danger btn-sm" onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign</button>
+      <div class="topbar-right" style="gap:8px">
+        <button id="btn-undo" class="btn btn-secondary btn-sm" style="display:none; padding: 6px 12px;" onclick="undoMove()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+        <button class="btn btn-danger btn-sm" style="padding: 6px 12px;" onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign</button>
       </div>
     </div>
     <div class="page-content">
@@ -135,6 +135,16 @@
   </div>
 </div>
 
+<!-- PROMOTION MODAL -->
+<div id="promotion-modal" class="promotion-modal">
+  <div class="promotion-content">
+    <div class="promotion-title">Select Promotion Piece</div>
+    <div class="promotion-options" id="promotion-options">
+       <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
+
 <div id="toast-container" class="toast-container"></div>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -198,14 +208,52 @@ function executeMove(from, to, promotion) {
   if (mode === 'bot') {
     if (chess.game_over()) { showResult(); return true; }
     document.getElementById('bot-thinking').style.display = 'block';
-    
-    // Use setTimeout so the UI can render the "thinking" spinner before the heavy minimax thread blocks execution
     setTimeout(makeBotMove, 1500);
   } else {
     SocketActions.makeMove(matchId, { from: move.from, to: move.to, promotion }, user.id);
     if (chess.game_over()) showResult();
   }
+  updateLastMoveHighlight(move.from, move.to);
   return true;
+}
+
+function updateLastMoveHighlight(from, to) {
+  $('#board .square-55d63').removeClass('highlight-last-move');
+  if (from && to) {
+    $('.square-' + from).addClass('highlight-last-move');
+    $('.square-' + to).addClass('highlight-last-move');
+  }
+}
+
+let pendingMove = null;
+function handlePromotion(source, target) {
+  pendingMove = { from: source, to: target };
+  const modal = document.getElementById('promotion-modal');
+  const options = document.getElementById('promotion-options');
+  options.innerHTML = '';
+  
+  const color = chess.turn(); // 'w' or 'b'
+  const pieces = ['q', 'r', 'b', 'n'];
+  const pIcons = { q: 'queen', r: 'rook', b: 'bishop', n: 'knight' };
+
+  pieces.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'promotion-piece';
+    const pieceImg = `https://chessboardjs.com/img/chesspieces/wikipedia/${color.toUpperCase()}${p.toUpperCase()}.png`;
+    el.innerHTML = `<img src="${pieceImg}" width="45">`;
+    el.onclick = () => selectPromotion(p);
+    options.appendChild(el);
+  });
+  
+  modal.style.display = 'flex';
+}
+
+function selectPromotion(piece) {
+  document.getElementById('promotion-modal').style.display = 'none';
+  if (pendingMove) {
+    executeMove(pendingMove.from, pendingMove.to, piece);
+    pendingMove = null;
+  }
 }
 
 // Ensure clicking empty squares works
@@ -213,9 +261,13 @@ $(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
   if (!gameActive || chess.game_over() || !selectedSquare) return;
   const square = $(this).attr('data-square');
   const moves = chess.moves({ square: selectedSquare, verbose: true });
-  const isLegal = moves.some(m => m.to === square);
-  if (isLegal) {
-    executeMove(selectedSquare, square, 'q');
+  const move = moves.find(m => m.to === square);
+  if (move) {
+    if (move.flags.includes('p')) {
+      handlePromotion(selectedSquare, square);
+    } else {
+      executeMove(selectedSquare, square, 'q');
+    }
   }
 });
 
@@ -265,9 +317,13 @@ function onDragStart(source, piece) {
   // Handle capture by clicking enemy piece
   if (selectedSquare && !isMyPiece) {
     const moves = chess.moves({ square: selectedSquare, verbose: true });
-    const isLegal = moves.some(m => m.to === source);
-    if (isLegal) {
-      executeMove(selectedSquare, source, 'q');
+    const move = moves.find(m => m.to === source);
+    if (move) {
+      if (move.flags.includes('p')) {
+        handlePromotion(selectedSquare, source);
+      } else {
+        executeMove(selectedSquare, source, 'q');
+      }
       return false; // Prevent drag
     }
   }
@@ -287,18 +343,19 @@ function onDrop(source, target) {
   if (source === target) return; // Released on the same square (click to select mode)
   
   removeHighlights();
-  const moves = chess.moves({ square: source, verbose: true });
-  const isLegal = moves.some(m => m.to === target);
-  
   if (!isLegal) return 'snapback';
   
   selectedSquare = null;
-  executeMove(source, target, 'q');
+  const move = moves.find(m => m.to === target);
+  if (move && move.flags.includes('p')) {
+    handlePromotion(source, target);
+  } else {
+    executeMove(source, target, 'q');
+  }
 }
 
 function onSnapEnd() { 
   board.position(chess.fen()); 
-  setTimeout(updateLastMoveHighlight, 250);
 }
 
 // ─── BOT ENGINE LOGIC ───
@@ -801,9 +858,26 @@ function handleCheatViolation() {
    }
 }
 
+// ─── ANTI-CHEAT DETECTION (REFINED) ───
+// Detects if the user is copying board state (FEN)
+document.addEventListener('copy', (e) => {
+   if (gameActive && mode !== 'bot') {
+       e.preventDefault();
+       Toast.error("Copying game state is restricted during LIVE matches.");
+   }
+});
+
+// Block context menu on the board to prevent easy engine analysis
+document.getElementById('board').addEventListener('contextmenu', (e) => {
+   if (gameActive) e.preventDefault();
+});
+
+// Remove aggressive tab-switch ban as requested
+/* 
 document.addEventListener("visibilitychange", () => {
    if (document.hidden && gameActive) handleCheatViolation();
 });
+*/
 
 </script>
 </body>

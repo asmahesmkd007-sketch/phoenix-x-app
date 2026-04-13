@@ -105,6 +105,7 @@ const UserAPI = {
   getStats       : ()  => api('/user/stats'),
   submitReport   : (d) => api('/user/report', { method: 'POST', body: d }),
   submitFeedback : (d) => api('/user/feedback', { method: 'POST', body: d }),
+  savePayoutDetails: (d) => api('/user/payout-details', { method: 'PUT', body: d }),
 };
 
 // ─── WALLET API ──────────────────────────────────────────

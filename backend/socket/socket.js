@@ -64,6 +64,16 @@ module.exports = (io) => {
 
       try {
         await supabase.from('profiles').update({ is_online: true, last_seen: new Date().toISOString() }).eq('id', userId);
+        
+        // Notify friends that this user is now online
+        const { data: friends } = await supabase.from('friends').select('user_id, friend_id').or(`user_id.eq.${userId},friend_id.eq.${userId}`).eq('status', 'accepted');
+        if (friends) {
+           friends.forEach(f => {
+              const friendId = f.user_id === userId ? f.friend_id : f.user_id;
+              const friendSocket = userToSocket.get(friendId);
+              if (friendSocket) io.to(friendSocket).emit('friend_status_update', { userId, is_online: true });
+           });
+        }
       } catch {}
       socket.emit('authenticated', { success: true });
     });
@@ -339,6 +349,18 @@ module.exports = (io) => {
         socketToUser.delete(socket.id);
         if (!userSockets.has(userData.userId) || userSockets.get(userData.userId).size === 0) {
            userToSocket.delete(userData.userId);
+           
+           // Notify friends that this user is now offline
+           try {
+              const { data: friends } = await supabase.from('friends').select('user_id, friend_id').or(`user_id.eq.${userData.userId},friend_id.eq.${userData.userId}`).eq('status', 'accepted');
+              if (friends) {
+                 friends.forEach(f => {
+                    const friendId = f.user_id === userData.userId ? f.friend_id : f.user_id;
+                    const friendSocket = userToSocket.get(friendId);
+                    if (friendSocket) io.to(friendSocket).emit('friend_status_update', { userId: userData.userId, is_online: false });
+                 });
+              }
+           } catch {}
         }
       }
 

@@ -172,4 +172,16 @@ const getStats = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, submitKYC, changePassword, updateSettings, getNotifications, markNotificationsRead, getStats };
+const updatePayoutDetails = async (req, res) => {
+  try {
+    const { app, upi } = req.body;
+    if (!app || !upi) return res.status(400).json({ success: false, message: 'App and UPI ID required.' });
+    const { error } = await supabase.from('profiles').update({ payout_details: { app, upi } }).eq('id', req.user.id);
+    if (error) return res.status(400).json({ success: false, message: error.message });
+    res.json({ success: true, message: 'Payout details updated.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+module.exports = { getProfile, updateProfile, submitKYC, changePassword, updateSettings, getNotifications, markNotificationsRead, getStats, updatePayoutDetails };

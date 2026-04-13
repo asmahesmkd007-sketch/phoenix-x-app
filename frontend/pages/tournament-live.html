@@ -175,7 +175,7 @@
             <div class="live-dot"></div> LIVE
           </div>
         </div>
-        <div class="topbar-right">
+        <div class="topbar-right" style="gap:8px">
           <div class="topbar-player-id" id="tb-pid">...</div>
         </div>
       </div>
@@ -247,6 +247,14 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+<!-- PROMOTION MODAL -->
+  <div id="promotion-modal" class="promotion-modal">
+    <div class="promotion-content">
+      <div class="promotion-title">Select Promotion Piece</div>
+      <div class="promotion-options" id="promotion-options"></div>
     </div>
   </div>
 
@@ -548,48 +556,64 @@ function onDragStart(source, piece) {
   const isMyPiece = piece.charAt(0) === myColorChar;
 
   if (selectedSquare && !isMyPiece) {
-    const isLegal = chess.moves({ square: selectedSquare, verbose: true }).some(m => m.to === source);
-    if (isLegal) { executeMove(selectedSquare, source, 'q'); return false; }
+    const moves = chess.moves({ square: selectedSquare, verbose: true });
+    const move = moves.find(m => m.to === source);
+    if (move) {
+      if (move.flags.includes('p')) handlePromotion(selectedSquare, source);
+      else executeMove(selectedSquare, source, 'q');
+      return false;
+    }
   }
 
-  if (chess.turn() !== myColorChar) return false;
-  if (!isMyPiece) return false;
+  if (chess.turn() !== myColorChar || !isMyPiece) return false;
 
   removeHighlights();
   selectedSquare = source;
-  highlight(source, 'selected');
-  chess.moves({ square: source, verbose: true }).forEach(m => highlight(m.to, 'move'));
+  highlightSquare(source, 'selected');
+  const moves = chess.moves({ square: source, verbose: true });
+  moves.forEach(m => highlightSquare(m.to, 'move'));
 }
 
 function onDrop(source, target) {
   if (source === target) return;
   removeHighlights();
-  if (!chess.moves({ square: source, verbose: true }).some(m => m.to === target)) return 'snapback';
+  const moves = chess.moves({ square: source, verbose: true });
+  const isLegal = moves.some(m => m.to === target);
+  if (!isLegal) return 'snapback';
+
+  const move = moves.find(m => m.to === target);
   selectedSquare = null;
-  executeMove(source, target, 'q');
+  if (move && move.flags.includes('p')) {
+     handlePromotion(source, target);
+  } else {
+     executeMove(source, target, 'q');
+  }
 }
 
-$(document).on('mousedown touchstart', '#board .square-55d63', function(e) {
-  if (!gameActive || chess.game_over() || !selectedSquare) return;
-  const sq = $(this).attr('data-square');
-  if (chess.moves({ square: selectedSquare, verbose: true }).some(m => m.to === sq)) {
-    executeMove(selectedSquare, sq, 'q');
+function onSnapEnd() { 
+  board.position(chess.fen()); 
+}
+
+function removeHighlights() {
+  $('#board .square-55d63').removeClass('highlight-selected highlight-move');
+}
+
+function highlightSquare(square, type) {
+  const $square = $('#board .square-' + square);
+  if (type === 'selected') $square.addClass('highlight-selected');
+  else $square.addClass('highlight-move');
+}
+
+$(document).on('mousedown touchstart', '#board .square-55d63', function() {
+  if (!gameActive || !selectedSquare) return;
+  const square = $(this).attr('data-square');
+  const moves = chess.moves({ square: selectedSquare, verbose: true });
+  const move = moves.find(m => m.to === square);
+  if (move) {
+    if (move.flags.includes('p')) handlePromotion(selectedSquare, square);
+    else executeMove(selectedSquare, square, 'q');
   }
 });
-
-function executeMove(from, to, promotion) {
-  const move = chess.move({ from, to, promotion });
-  if (!move) return false;
-  removeHighlights();
-  board.position(chess.fen());
-  updatePlayerBars();
-  if (isKnockout) {
-      sock.emit('make_tr_move', { matchId, moveSan: move.san, userId: user.id });
-  } else {
-      SocketActions.makeMove(matchId, { from, to, promotion }, user.id);
-  }
-  return true;
-}
 
 function updatePlayerBars() {
   const myColorChar = myColor === 'white' ? 'w' : 'b';
@@ -658,6 +682,21 @@ function resignGame() {
 
 // ─── SOCKET RESPONSES ───
 sock.on('search_cancelled', () => { showLobby('Ready to Play', 'Join the queue to find an opponent.', false, true, 'Find Match', startSearching); });
+    sock.on('tr_match_sync', (data) => {
+      chess.load(data.fen);
+      board.position(chess.fen());
+      myTime = data.white_time;
+      oppTime = data.black_time;
+      updateTimeDisplay();
+      updateLastMoveHighlight();
+    });
+
+    sock.on('tr_move_made', (data) => {
+      chess.load(data.fen);
+      board.position(chess.fen());
+      updateLastMoveHighlight(data.lastMove?.from, data.lastMove?.to);
+      updatePlayerBars();
+    });
 sock.on('match_found', (data) => {
   matchId = data.matchId;
   Toast.info('Match Found!');
@@ -735,9 +774,21 @@ function handleCheatViolation() {
    }
 }
 
-document.addEventListener("visibilitychange", () => {
-   if (document.hidden && gameActive) handleCheatViolation();
+// ─── ANTI-CHEAT DETECTION (REFINED) ───
+document.addEventListener('copy', (e) => {
+   if (gameActive) {
+       e.preventDefault();
+       Toast.error("Copying game state is restricted during LIVE matches.");
+   }
 });
+
+document.getElementById('board').addEventListener('contextmenu', (e) => {
+   if (gameActive) e.preventDefault();
+});
+
+// document.addEventListener("visibilitychange", () => {
+//    if (document.hidden && gameActive) handleCheatViolation();
+// });
 
 initTournament();
   </script>

@@ -76,6 +76,15 @@
             <div class="stat-sub">Entry fees</div>
           </div>
         </div>
+          
+        <!-- Payout Methods -->
+        <div class="card mb-24">
+          <div class="card-title"><i class="fa-solid fa-link"></i> Linked Payout Method</div>
+          <div id="payout-status" style="margin-bottom:16px;">
+             <div class="skeleton" style="height:40px;"></div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="openPayoutModal()"><i class="fa-solid fa-pen-to-square"></i> Manage Payout Method</button>
+        </div>
 
         <!-- Transaction History -->
         <div class="card">
@@ -142,6 +151,11 @@
     <div class="modal">
       <div class="modal-title">→ Withdraw Coins</div>
       <div class="modal-desc">Min 30 coins. Admin will process manually.</div>
+      
+      <div id="linked-account-msg" style="padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:var(--success)">
+         <!-- Populated by JS -->
+      </div>
+
       <div id="withdraw-balance-info"
         style="background:rgba(91,192,235,0.08);border:1px solid rgba(91,192,235,0.2);padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:13px">
         Available: <strong id="wd-available">0</strong> coins
@@ -154,7 +168,41 @@
       <div id="wd-error" class="error-msg"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeModal('withdraw-modal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitWithdraw()">Submit Request</button>
+        <button class="btn btn-primary" id="btn-final-withdraw" onclick="submitWithdraw()">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYOUT MODAL -->
+  <div class="modal-overlay" id="payout-modal">
+    <div class="modal">
+      <div class="modal-title"><i class="fa-solid fa-link"></i> Manage Payout Method</div>
+      <div class="modal-desc">Link your UPI or Bank details for withdrawals.</div>
+      
+      <div class="input-group">
+        <label class="input-label">Select Primary Payout App</label>
+        <select id="payout-app" class="input">
+          <option value="GPay">Google Pay (GPay)</option>
+          <option value="PhonePe">PhonePe</option>
+          <option value="Paytm">Paytm</option>
+          <option value="BHIM">BHIM UPI</option>
+          <option value="AmazonPay">Amazon Pay</option>
+          <option value="SBI">YONO SBI</option>
+          <option value="iMobile">iMobile Pay (ICICI)</option>
+          <option value="HDFC">HDFC Bank</option>
+          <option value="Other">Other UPI / Bank</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">UPI ID / VPA (e.g. name@okaxis)</label>
+        <input type="text" id="payout-upi" class="input" placeholder="Enter your UPI ID">
+      </div>
+
+      <div id="payout-error" class="error-msg"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('payout-modal')">Cancel</button>
+        <button class="btn btn-primary" id="save-payout-btn" onclick="savePayoutDetails()">Link Account</button>
       </div>
     </div>
   </div>
@@ -175,6 +223,56 @@
     let currentBalance = 0;
     let currentPage = 1;
     let currentFilter = 'all';
+    let payoutDetails = null;
+
+    function openPayoutModal() { 
+      if(payoutDetails) {
+        document.getElementById('payout-app').value = payoutDetails.app || 'GPay';
+        document.getElementById('payout-upi').value = payoutDetails.upi || '';
+      }
+      document.getElementById('payout-modal').classList.add('active'); 
+    }
+
+    async function savePayoutDetails() {
+      const app = document.getElementById('payout-app').value;
+      const upi = document.getElementById('payout-upi').value.trim();
+      if(!upi) return Toast.error('Please enter a valid UPI ID');
+      
+      const btn = document.getElementById('save-payout-btn');
+      btn.disabled = true; btn.textContent = 'Saving...';
+      
+      const res = await UserAPI.savePayoutDetails({ app, upi });
+      if(res?.success) {
+        Toast.success('Payout method linked successfully!');
+        payoutDetails = { app, upi };
+        renderPayoutStatus();
+        closeModal('payout-modal');
+      } else {
+        Toast.error(res?.message || 'Failed to save payout info');
+      }
+      btn.disabled = false; btn.textContent = 'Link Account';
+    }
+
+    function renderPayoutStatus() {
+      const el = document.getElementById('payout-status');
+      if(!payoutDetails || !payoutDetails.upi) {
+        el.innerHTML = '<div style="color:var(--error); font-size:13px"><i class="fa-solid fa-circle-exclamation"></i> No payout method linked. Please link one to withdraw.</div>';
+        document.getElementById('btn-withdraw').disabled = true;
+        document.getElementById('btn-withdraw').title = 'Link a payout method first';
+      } else {
+        el.innerHTML = `
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:10px 14px; border-radius:8px">
+             <div style="font-size:24px; color:var(--teal)"><i class="fa-solid fa-wallet"></i></div>
+             <div>
+                <div style="font-size:13px; font-weight:600">${payoutDetails.app}</div>
+                <div style="font-size:12px; color:var(--text-secondary)">${payoutDetails.upi}</div>
+             </div>
+          </div>
+        `;
+        document.getElementById('btn-withdraw').disabled = false;
+        document.getElementById('btn-withdraw').title = '';
+      }
+    }
 
     // Check KYC
     // Fresh profile fetch பண்ணி kyc check பண்ணு
@@ -209,6 +307,13 @@
         document.getElementById('wd-available').textContent = currentBalance;
       }
       if (txnRes?.success) renderTransactions(txnRes.transactions);
+
+      // Load payout details from profile
+      const profRes = await UserAPI.getProfile();
+      if(profRes?.success) {
+        payoutDetails = profRes.user.payout_details;
+        renderPayoutStatus();
+      }
     }
 
     function renderTransactions(txns) {
@@ -247,7 +352,14 @@
     }
 
     function openDepositModal() { document.getElementById('deposit-modal').classList.add('active'); }
-    function openWithdrawModal() { document.getElementById('withdraw-modal').classList.add('active'); }
+    function openWithdrawModal() { 
+      if(!payoutDetails || !payoutDetails.upi) {
+          Toast.error('Please link a payout method first.');
+          return openPayoutModal();
+      }
+      document.getElementById('linked-account-msg').innerHTML = `<i class="fa-solid fa-circle-check"></i> Linked: <strong>${payoutDetails.app}</strong> (${payoutDetails.upi})`;
+      document.getElementById('withdraw-modal').classList.add('active'); 
+    }
     function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
     function setAmount(amt) { document.getElementById('deposit-amount').value = amt; document.getElementById('coins-preview').textContent = amt; }

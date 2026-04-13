@@ -322,6 +322,12 @@ document.getElementById('notif-btn').addEventListener('click', async (e) => {
 });
 document.addEventListener('click', () => document.getElementById('notif-dropdown').classList.remove('open'));
 
+// Real-time friend status
+sock.on('friend_status_update', (data) => {
+   // Silently reload just the friends and statistics to update counts
+   loadDashboard();
+});
+
 // Socket
 const sock = initSocket();
 sock.on('silent_notification', () => {

@@ -431,11 +431,16 @@ tbody tr.highlight { background: rgba(212,175,55,0.06); }
 /* NOTIFICATION DROPDOWN */
 .notif-dropdown {
   position: absolute; top: calc(100% + 8px); right: 0;
-  width: 340px; background: var(--bg-secondary);
+  width: 340px; max-width: 90vw; background: var(--bg-secondary);
   border: 1px solid var(--border); border-radius: 12px;
   box-shadow: var(--shadow); z-index: 200;
   opacity: 0; pointer-events: none; transform: translateY(-8px);
   transition: all 0.2s;
+}
+@media (max-width: 600px) {
+  .notif-dropdown {
+    right: -10vw; /* Adjust dropdown position to stay within screen */
+  }
 }
 .notif-dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
 .notif-header { padding: 14px 16px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 13px; }
@@ -542,3 +547,51 @@ tbody tr.highlight { background: rgba(212,175,55,0.06); }
 .progress-teal { background: linear-gradient(90deg, var(--teal-dark), var(--teal)); }
 .progress-orange { background: linear-gradient(90deg, #ff4500, var(--orange)); }
 .progress-gold { background: linear-gradient(90deg, #b8860b, var(--gold)); }
+.highlight-last-move {
+  box-shadow: inset 0 0 3px 3px rgba(212, 175, 55, 0.75);
+}
+
+.promotion-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0; width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.8);
+  backdrop-filter: blur(5px);
+  justify-content: center;
+  align-items: center;
+}
+.promotion-content {
+  background: var(--bg-secondary);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.promotion-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: var(--teal);
+}
+.promotion-options {
+  display: flex;
+  gap: 20px;
+}
+.promotion-piece {
+  width: 60px; height: 60px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  font-size: 32px;
+}
+.promotion-piece:hover {
+  transform: scale(1.15);
+  background: rgba(212, 175, 55, 0.2);
+}

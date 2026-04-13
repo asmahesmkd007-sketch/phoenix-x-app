@@ -15,4 +15,5 @@ r1.put('/settings', auth, uc.updateSettings);
 r1.get('/notifications', auth, uc.getNotifications);
 r1.put('/notifications/read', auth, uc.markNotificationsRead);
 r1.get('/stats', auth, uc.getStats);
+r1.put('/payout-details', auth, uc.updatePayoutDetails);
 module.exports = { userRouter: r1 };

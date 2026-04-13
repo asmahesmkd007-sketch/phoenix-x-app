@@ -77,11 +77,14 @@ const requestWithdraw = async (req, res) => {
     if (!amount || amount < 30) 
       return res.status(400).json({ success: false, message: 'Minimum 30 coins.' });
 
-    const { data: wallet } = await supabase
-      .from('wallets')
-      .select('balance, total_withdrawn')
-      .eq('user_id', req.user.id)
-      .single();
+    const [{ data: wallet }, { data: profile }] = await Promise.all([
+      supabase.from('wallets').select('balance, total_withdrawn').eq('user_id', req.user.id).single(),
+      supabase.from('profiles').select('payout_details').eq('id', req.user.id).single()
+    ]);
+    
+    if (!profile?.payout_details || !profile.payout_details.upi) {
+      return res.status(400).json({ success: false, message: 'Please link a payout method before withdrawing.' });
+    }
 
     if (!wallet || Number(wallet.balance) < amount)
       return res.status(400).json({ success: false, message: 'Insufficient balance.' });
@@ -122,7 +125,8 @@ const requestWithdraw = async (req, res) => {
       .insert({ 
         user_id: req.user.id, 
         amount, 
-        queue_position: queuePos 
+        queue_position: queuePos,
+        payout_details: profile.payout_details 
       })
       .select()
       .single();
