@@ -206,7 +206,7 @@ document.getElementById('dash-rank-badge').textContent = user.rank || 'Bronze';
 
 // Load data
 async function loadDashboard() {
-  const tryLoad = async (promise) => { try { return await promise; } catch (e) { console.error(e); return { success: false }; } };
+  const tryLoad = async (promise) => { try { return await promise || { success: false }; } catch (e) { console.warn('API Error:', e); return { success: false }; } };
 
   const walletRes = await tryLoad(WalletAPI.getBalance());
   const statsRes = await tryLoad(UserAPI.getStats());
@@ -242,11 +242,11 @@ async function loadDashboard() {
       return `<div class="flex-between" style="padding:10px 0;border-bottom:1px solid var(--border)">
         <div class="flex gap-12 align-items-center">
           <div class="avatar-initial" style="width:32px;height:32px;font-size:13px">${(opponent?.username || '?').replace('@', '')[0].toUpperCase()}</div>
-          <div><div style="font-size:13px;font-weight:500">${fmt.username(opponent?.username || 'Unknown')}</div><div style="font-size:10px;color:var(--text-muted)">${m.match_type} · ${fmt.relTime(m.createdAt)}</div></div>
+          <div><div style="font-size:13px;font-weight:500">${fmt.username(opponent?.username || 'Unknown')}</div><div style="font-size:10px;color:var(--text-muted)">${m.match_type} · ${fmt.relTime(m.created_at)}</div></div>
         </div>
         <div style="text-align:right">
           <div class="${resultClass}" style="font-weight:700;font-size:13px">${resultText}</div>
-          <div style="font-size:11px;color:${iqChange >= 0 ? 'var(--success)' : 'var(--error)'}">${iqChange >= 0 ? '+' : ''}${iqChange} IQ</div>
+          <div style="font-size:11px;color:${iqChange >= 0 ? 'var(--success)' : 'var(--error)'}">${iqChange >= 0 ? '+' : ''}${iqChange || 0} IQ</div>
         </div>
       </div>`;
     }).join('');
@@ -283,7 +283,7 @@ async function loadDashboard() {
       <div class="notif-item">
         <div class="notif-title">${n.title}</div>
         <div class="notif-msg">${n.message}</div>
-        <div class="notif-time">${fmt.relTime(n.createdAt)}</div>
+        <div class="notif-time">${fmt.relTime(n.created_at)}</div>
       </div>`).join('');
   }
   // Friends loader
@@ -329,20 +329,22 @@ document.getElementById('notif-btn').addEventListener('click', async (e) => {
 });
 document.addEventListener('click', () => document.getElementById('notif-dropdown').classList.remove('open'));
 
+// Socket Initialization first
+const sock = initSocket();
+
 // Real-time friend status
 sock.on('friend_status_update', (data) => {
    // Silently reload just the friends and statistics to update counts
    loadDashboard();
 });
 
-// Socket
-const sock = initSocket();
 sock.on('silent_notification', () => {
    const badge = document.getElementById('notif-count');
    badge.textContent = parseInt(badge.textContent || '0') + 1;
    badge.style.display = 'flex';
    loadDashboard(); // Reload notifications list silently
 });
+
 loadDashboard();
 </script>
 </body>
