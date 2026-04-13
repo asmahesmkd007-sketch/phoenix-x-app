@@ -738,9 +738,6 @@ function handleCheatViolation() {
 document.addEventListener("visibilitychange", () => {
    if (document.hidden && gameActive) handleCheatViolation();
 });
-window.addEventListener("blur", () => {
-   if (gameActive) handleCheatViolation();
-});
 
 initTournament();
   </script>
