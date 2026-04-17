@@ -10,15 +10,28 @@ const path       = require('path');
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server, {
-  cors: { origin: process.env.FRONTEND_URL || '*', methods: ['GET', 'POST'] },
-  pingTimeout: 10000, // Detect dead sockets in 10s
-  pingInterval: 5000, // Check every 5s
+  cors: { 
+    origin: [process.env.FRONTEND_URL || 'http://localhost:5000', 'http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  pingTimeout: 10000, 
+  pingInterval: 5000, 
 });
 
+app.set('io', io);
+
 // ─── MIDDLEWARE ───────────────────────────────────────────
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
-app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
+app.use(cors({ 
+  origin: [process.env.FRONTEND_URL || 'http://localhost:5000', 'http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:3000'],
+  credentials: true 
+}));
 
 // ─── RAZORPAY WEBHOOK ────────────────────────────────────
 app.post('/api/webhook/razorpay', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -70,6 +83,7 @@ app.use('/api/tournaments', require('./routes/tournament.routes'));
 app.use('/api/game',        require('./routes/game.routes').gameRouter);
 app.use('/api/admin',       require('./routes/admin.routes'));
 app.use('/api/friends',     require('./routes/friend.routes'));
+app.use('/api/kyc',         require('./routes/kyc.routes'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -101,7 +115,14 @@ setTimeout(() => {
   autoCreatePaidTournaments();
 }, 3000);
 
+// ─── STATIC FILES ──────────────────────────────────────────
+app.use(express.static(path.join(__dirname, '../frontend')));
+
 // ─── CATCH-ALL → SERVE FRONTEND ───────────────────────────
+app.get('/pages/*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend', req.path));
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/pages/login.html'));
 });

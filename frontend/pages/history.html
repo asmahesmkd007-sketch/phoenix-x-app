@@ -93,12 +93,17 @@ async function loadMatches(append = false) {
     const iqChange = isP1 ? (m.iq_change_p1 || 0) : (m.iq_change_p2 || 0);
     const resultConfig = { win: { class: 'result-win', label: '<i class="fa-solid fa-check"></i> Win', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' }, loss: { class: 'result-loss', label: '<i class="fa-solid fa-xmark"></i> Loss', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' }, draw: { class: 'result-draw', label: '½ Draw', bg: 'rgba(255,255,255,0.04)', border: 'var(--border)' } };
     const rc = resultConfig[myResult];
+
+    const avatarHtml = opponent?.profile_image 
+      ? `<img src="${opponent.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : (opponent?.username || (m.match_type === 'bot' ? '<i class="fa-solid fa-robot"></i>' : '?')).replace('@', '')[0].toUpperCase();
+
     return `<div style="background:${rc.bg};border:1px solid ${rc.border};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
       <div style="width:56px;text-align:center;flex-shrink:0">
         <div class="${rc.class}" style="font-weight:800;font-size:16px;font-family:var(--font-display)">${rc.label}</div>
         <div style="font-size:10px;color:${iqChange >= 0 ? 'var(--success)' : 'var(--error)'};margin-top:2px;font-weight:700">${iqChange >= 0 ? '+' : ''}${iqChange} IQ</div>
       </div>
-      <div class="avatar-initial" style="width:40px;height:40px;font-size:16px">${(opponent?.username || (m.match_type === 'bot' ? '<i class="fa-solid fa-robot"></i>' : '?')).replace('@', '')[0].toUpperCase()}</div>
+      <div class="avatar-initial" style="width:40px;height:40px;font-size:16px">${avatarHtml}</div>
       <div style="flex:1">
         <div style="font-weight:600;font-size:14px">${m.match_type === 'bot' ? `Bot (IQ ${m.bot_difficulty || '?'})` : fmt.username(opponent?.username || 'Unknown')}</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${modeLabels[m.match_type] || m.match_type} · ${m.timer_type ? m.timer_type + ' min' : 'No timer'}</div>

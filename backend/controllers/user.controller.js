@@ -146,9 +146,19 @@ const updateSettings = async (req, res) => {
 
 const getNotifications = async (req, res) => {
   try {
-    const { data: notifs } = await supabase.from('notifications').select('*').eq('user_id', req.user.id).order('created_at', { ascending: false }).limit(30);
-    // Removed auto-mark as read to support Notification Bell Fix
-    res.json({ success: true, notifications: notifs || [] });
+    const { data: allNotifs } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    if (allNotifs && allNotifs.length > 5) {
+      const idsToDelete = allNotifs.slice(5).map(n => n.id);
+      await supabase.from('notifications').delete().in('id', idsToDelete);
+      return res.json({ success: true, notifications: allNotifs.slice(0, 5) });
+    }
+
+    res.json({ success: true, notifications: allNotifs || [] });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }

@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   profile_image   TEXT DEFAULT '',
   iq_level        INTEGER DEFAULT 100,
   rank            TEXT DEFAULT 'Bronze' CHECK (rank IN ('Bronze','Silver','Gold','Platinum')),
-  kyc_status      TEXT DEFAULT 'not_verified' CHECK (kyc_status IN ('not_verified','pending','verified','rejected')),
+  kyc_status      TEXT DEFAULT 'not_verified' CHECK (kyc_status IN ('not_verified','pending','verified','approved','rejected')),
+  kyc_verified    BOOLEAN DEFAULT FALSE,
   kyc_rejection_reason TEXT DEFAULT '',
   status          TEXT DEFAULT 'active' CHECK (status IN ('active','blocked','banned')),
   is_admin        BOOLEAN DEFAULT FALSE,
@@ -115,6 +116,32 @@ CREATE TABLE IF NOT EXISTS kyc (
 
 CREATE TRIGGER kyc_updated_at
   BEFORE UPDATE ON kyc
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- KYC REQUESTS (New System)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS kyc_requests (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id         UUID UNIQUE NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  aadhaar_number  TEXT NOT NULL,
+  name            TEXT NOT NULL,
+  dob             DATE NOT NULL,
+  address_line1   TEXT NOT NULL,
+  address_line2   TEXT NOT NULL,
+  address_line3   TEXT NOT NULL,
+  pincode         TEXT NOT NULL,
+  front_image_url TEXT,
+  back_image_url  TEXT,
+  full_image_url  TEXT,
+  status          TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  rejection_reason TEXT DEFAULT '',
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER kyc_requests_updated_at
+  BEFORE UPDATE ON kyc_requests
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ============================================================
@@ -321,6 +348,9 @@ CREATE POLICY "wallets_own" ON wallets USING (auth.uid() = user_id);
 
 ALTER TABLE kyc ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "kyc_own" ON kyc USING (auth.uid() = user_id);
+
+ALTER TABLE kyc_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "kyc_requests_own" ON kyc_requests USING (auth.uid() = user_id);
 
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "matches_select" ON matches FOR SELECT USING (

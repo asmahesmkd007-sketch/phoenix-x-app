@@ -85,7 +85,12 @@ async function loadLeaderboard() {
     ['t1','t2','t3'].forEach((id, i) => {
       const p = allPlayers[i];
       if (!p) return;
-      document.getElementById(id + '-avatar').textContent = (p.username || '?').replace('@', '')[0].toUpperCase();
+      const avatarEl = document.getElementById(id + '-avatar');
+      if (p.profile_image) {
+        avatarEl.innerHTML = `<img src="${p.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } else {
+        avatarEl.textContent = (p.username || '?').replace('@', '')[0].toUpperCase();
+      }
       document.getElementById(id + '-name').textContent = fmt.username(p.username);
       document.getElementById(id + '-iq').textContent = p.iq_level;
     });
@@ -100,9 +105,13 @@ function renderList(players) {
   const medals = ['<i class="fa-solid fa-medal" style="color:var(--gold);"></i>','<i class="fa-solid fa-medal" style="color:#c0c0c0;"></i>','<i class="fa-solid fa-medal" style="color:#cd7f32;"></i>'];
   document.getElementById('lb-list').innerHTML = players.map((p, i) => {
     const isMe = p.user_id === user.id || p.username === user.username;
+    const avatarHtml = p.profile_image 
+      ? `<img src="${p.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : (p.username || '?').replace('@', '')[0].toUpperCase();
+
     return `<div class="lb-row ${isMe ? 'me' : ''}">
       <div class="lb-rank ${rankColors[i] || ''}">${i < 3 ? medals[i] : p.rank}</div>
-      <div class="avatar-initial" style="width:36px;height:36px;font-size:14px">${(p.username || '?').replace('@', '')[0].toUpperCase()}</div>
+      <div class="avatar-initial" style="width:36px;height:36px;font-size:14px">${avatarHtml}</div>
       <div style="flex:1">
         <div style="font-weight:600;font-size:13px">${fmt.username(p.username)}${isMe ? ' <span style="color:#5bc0eb;font-size:11px">(You)</span>' : ''}</div>
         <div style="font-size:11px;color:var(--text-muted)">${p.total_matches || 0} matches · ${p.win_rate || 0}% WR</div>

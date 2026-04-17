@@ -3,7 +3,11 @@ let _socket = null;
 const initSocket = () => {
   if (_socket && _socket.connected) return _socket;
 
-  _socket = io(window.location.origin, {
+  const socketUrl = (window.location.port === '5500' || window.location.port === '3000')
+    ? 'http://localhost:5000'
+    : window.location.origin;
+
+  _socket = io(socketUrl, {
     transports: ['websocket', 'polling'],
     reconnectionAttempts: Infinity, // Never give up reconnecting
     reconnectionDelay: 1000,        // Reconnect faster
@@ -40,6 +44,78 @@ const initSocket = () => {
       try { await AuthAPI.logout(); } catch (e) {}
       localStorage.clear();
       window.location.href = '/pages/login.html';
+  });
+
+  // ─── REAL-TIME NOTIFICATIONS ───────────────────────────
+  _socket.on('silent_notification', () => {
+      if (typeof Toast !== 'undefined') Toast.info('New notification received! <i class="fa-solid fa-bell"></i>');
+      // Update notification counts globally if they exist on page
+      const countEl = document.getElementById('notif-count');
+      if (countEl) {
+          let count = parseInt(countEl.textContent) || 0;
+          countEl.textContent = count + 1;
+          countEl.style.display = 'flex';
+      }
+      // If we're on dashboard, reload it
+      if (typeof loadDashboard === 'function') loadDashboard();
+      // If we're on friends page, reload it
+      if (typeof loadRequests === 'function') loadRequests();
+  });
+
+  _socket.on('friend_invite', (data) => {
+      if (typeof Toast !== 'undefined') Toast.info(`${data.fromUsername} challenged you!`);
+      
+      // If user is actively playing on the game board, skip the modal
+      if (window.location.pathname.includes('/game.html')) {
+          return;
+      }
+
+      // Update social page list instantly if open
+      if (typeof loadRequests === 'function') loadRequests();
+      if (typeof loadFriends === 'function') loadFriends();
+
+      // Global challenge modal inject
+      if (!document.getElementById('global-invite-modal')) {
+          const div = document.createElement('div');
+          div.id = 'global-invite-modal';
+          div.className = 'modal-overlay active';
+          div.innerHTML = `
+              <div class="modal">
+                  <div class="modal-title"><i class="fa-solid fa-chess-pawn"></i> Challenge Received!</div>
+                  <div id="global-invite-desc" class="modal-desc"></div>
+                  <div class="modal-actions">
+                      <button class="btn btn-secondary" id="global-invite-decline">Decline</button>
+                      <button class="btn btn-primary" id="global-invite-accept">Accept</button>
+                  </div>
+              </div>
+          `;
+          document.body.appendChild(div);
+          
+          document.getElementById('global-invite-decline').onclick = () => {
+              _socket.emit('reject_invite', { fromUserId: data.fromUserId });
+              div.classList.remove('active');
+          };
+          document.getElementById('global-invite-accept').onclick = () => {
+              _socket.emit('accept_invite', { 
+                  fromUserId: data.fromUserId, 
+                  toUserId: getUser().id, 
+                  fromUsername: data.fromUsername, 
+                  toUsername: getUser().username, 
+                  timer: data.timer 
+              });
+              div.classList.remove('active');
+              if (typeof Toast !== 'undefined') Toast.success('Joining match...');
+          };
+      }
+      
+      document.getElementById('global-invite-desc').textContent = `${data.fromUsername} challenges you to a ${data.timer}-minute game!`;
+      document.getElementById('global-invite-modal').classList.add('active');
+  });
+
+  _socket.on('match_found', (data) => {
+      // Global match detection: redirect to game page from anywhere
+      localStorage.setItem('px_match', JSON.stringify(data));
+      window.location.href = '/pages/game.html?matchId=' + data.matchId;
   });
 
   return _socket;

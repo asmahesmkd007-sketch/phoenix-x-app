@@ -149,6 +149,57 @@
     .btn-reject:hover {
       background: rgba(239, 68, 68, 0.2);
     }
+
+    /* IMAGE MODAL STYLES */
+    .image-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+    .image-modal.active {
+      display: flex;
+    }
+    .image-modal-content {
+      max-width: 90%;
+      max-height: 90%;
+      position: relative;
+    }
+    .image-modal-content img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .image-modal-close {
+      position: absolute;
+      top: -40px;
+      right: 0;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    .image-modal-title {
+      position: absolute;
+      bottom: -40px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: var(--gold);
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 
@@ -599,6 +650,14 @@
     </div>
   </div>
 
+  <div id="image-modal" class="image-modal" onclick="closeImageModal()">
+    <div class="image-modal-content" onclick="event.stopPropagation()">
+      <button class="image-modal-close" onclick="closeImageModal()">&times;</button>
+      <img id="modal-img" src="" alt="HD Preview">
+      <div id="modal-title" class="image-modal-title">HD DOCUMENT PREVIEW</div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="/js/api.js"></script>
@@ -729,45 +788,127 @@
     async function loadKYC() {
       const res = await AdminAPI.getKYC();
       const container = document.getElementById('kyc-list');
-      if (!res?.success || !res.kycs?.length) {
+      
+      if (!res?.success) {
+        container.innerHTML = `<div class="error-msg" style="text-align:center;padding:20px;background:rgba(239,68,68,0.1);border-radius:8px;color:var(--error)">
+          <i class="fa-solid fa-circle-exclamation"></i> ${res?.message || 'Failed to load KYC requests.'}
+        </div>`;
+        return;
+      }
+
+      if (!res.kycs?.length) {
         container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)"><div style="font-size:40px"><i class="fa-solid fa-check-circle"></i></div><div style="margin-top:12px">No pending KYC requests!</div></div>';
         return;
       }
       container.innerHTML = res.kycs.map(k => {
         const profile = k.profiles || {};
+        const isPAN = k.document_type === 'pan';
+        const isPassport = k.document_type === 'passport';
+        const docs = [];
+        
+        if (isPAN) {
+          if (k.pan_image_url) docs.push(`<button onclick="openImageModal('${SUPABASE_STORAGE_URL}/kyc-documents/${k.pan_image_url}', 'PAN CARD')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-image"></i> View PAN</button>`);
+        } else {
+          if (k.front_image_url) docs.push(`<button onclick="openImageModal('${SUPABASE_STORAGE_URL}/kyc-documents/${k.front_image_url}', '${k.document_type.toUpperCase()} FRONT')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-image"></i> Front</button>`);
+          if (k.back_image_url) docs.push(`<button onclick="openImageModal('${SUPABASE_STORAGE_URL}/kyc-documents/${k.back_image_url}', '${k.document_type.toUpperCase()} BACK')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-image"></i> Back</button>`);
+          if (k.full_image_url) docs.push(`<button onclick="openImageModal('${SUPABASE_STORAGE_URL}/kyc-documents/${k.full_image_url}', '${k.document_type.toUpperCase()} FULL')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-image"></i> Full Copy</button>`);
+        }
+        
+        let docColor = 'badge-bronze';
+        if (isPAN) docColor = 'badge-pending';
+        if (isPassport) docColor = 'badge-verified';
+
         return `<div class="card mb-12">
       <div class="flex-between">
-        <div>
-          <div style="font-weight:700;font-size:14px">@${profile.username || 'Unknown'}</div>
-          <div style="font-size:12px;color:var(--text-muted)">${profile.email || '-'} · ${profile.player_id || '-'}</div>
-          <div style="margin-top:8px">
-            <span class="badge badge-pending" style="margin-right:8px">${k.type?.toUpperCase()}</span>
-            <span style="font-size:12px;color:var(--text-secondary)">Name: ${k.name}</span>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-weight:700;font-size:15px;color:var(--gold)">@${profile.username || 'Unknown'}</div>
+            <span class="badge ${docColor}" style="font-size:10px">${k.document_type.toUpperCase()}</span>
           </div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">ID: ${k.id_number?.replace(/\d(?=\d{4})/g, '*')}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Submitted: ${k.created_at ? new Date(k.created_at).toLocaleString('en-IN') : '-'}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">${profile.email || '-'} · ${profile.player_id || '-'}</div>
+          
+          <div class="grid-2" style="gap:20px;margin-bottom:10px">
+            <div>
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Document Name</div>
+              <div style="font-size:13px">${k.name}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Date of Birth</div>
+              <div style="font-size:13px">${k.dob}</div>
+            </div>
+          </div>
+
+          ${isPAN ? `
+            <div style="margin-bottom:10px">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">PAN Number</div>
+              <div style="font-size:13px;font-family:monospace">${k.pan_number || 'N/A'}</div>
+            </div>
+          ` : isPassport ? `
+            <div class="grid-2" style="gap:20px;margin-bottom:10px">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Passport Number</div>
+                <div style="font-size:13px;font-family:monospace">${k.passport_number || 'N/A'}</div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Nationality</div>
+                <div style="font-size:13px">${k.nationality || '-'}</div>
+              </div>
+            </div>
+          ` : `
+            <div style="margin-bottom:10px">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Aadhaar Number</div>
+              <div style="font-size:13px;font-family:monospace">${k.aadhaar_number || 'N/A'}</div>
+            </div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Address</div>
+              <div style="font-size:13px">${k.address_line1}, ${k.address_line2}, ${k.address_line3} - ${k.pincode}</div>
+            </div>
+          `}
+
+          <div style="display:flex;gap:8px;margin-top:12px">
+            ${docs.join('')}
+          </div>
         </div>
-        <div class="action-btns" style="align-items:flex-start">
-          <button class="btn-approve" onclick="reviewKYC('${k.id}', 'approve')"><i class="fa-solid fa-check"></i> Approve</button>
-          <button class="btn-reject" onclick="rejectKYC('${k.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+        <div class="action-btns" style="flex-direction:column;gap:10px;padding-left:20px;border-left:1px solid var(--border)">
+          <button class="btn-approve" style="width:120px;padding:8px" onclick="reviewKYCNew('${k.id}', 'approved')"><i class="fa-solid fa-check"></i> Approve</button>
+          <button class="btn-reject" style="width:120px;padding:8px" onclick="rejectKYCNew('${k.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
         </div>
       </div>
     </div>`;
       }).join('');
     }
 
-    async function reviewKYC(id, action, reason = "") {
-      const res = await AdminAPI.reviewKYC(id, action, reason);
+    const SUPABASE_STORAGE_URL = 'https://jxzalgpvuamfmoysvkkz.supabase.co/storage/v1/object/public';
+
+    function openImageModal(url, title) {
+      const modal = document.getElementById('image-modal');
+      const img = document.getElementById('modal-img');
+      const titleEl = document.getElementById('modal-title');
+      
+      img.src = url;
+      titleEl.textContent = 'HD DOCUMENT PREVIEW: ' + title;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Stop scrolling
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('image-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+
+    async function reviewKYCNew(requestId, status, reason = "") {
+      const res = await AdminAPI.reviewKYC(requestId, status, reason);
       if (res?.success) {
-        Toast.success("KYC " + action + "d!");
+        Toast.success("KYC " + status + "!");
         loadKYC();
         loadDashboard();
       } else Toast.error(res?.message || "Failed.");
     }
 
-    function rejectKYC(id) {
-      const reason = prompt("Rejection reason:");
-      if (reason !== null) reviewKYC(id, "reject", reason);
+    function rejectKYCNew(id) {
+      const reason = prompt("Enter rejection reason:");
+      if (reason) reviewKYCNew(id, "rejected", reason);
     }
 
     async function loadWithdrawals() {
@@ -784,13 +925,25 @@
         <div>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <span style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);color:var(--orange);padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700">#${i + 1} in queue</span>
-            <span style="font-weight:700">@${profile.username || 'Unknown'}</span>
+            <span style="font-weight:700; font-size:16px; color:var(--text-primary)">${profile.player_id || 'Unknown ID'}</span>
+            ${profile.username ? `<span style="color:var(--text-muted); font-size:13px">(@${profile.username.replace('@','')})</span>` : ''}
           </div>
-          <div style="font-size:12px;color:var(--text-muted)">${profile.email || '-'} · ${profile.player_id || '-'}</div>
-          <div style="font-family:var(--font-display);font-size:22px;color:var(--gold);margin-top:6px">${r.amount} <span style="font-size:12px;color:var(--text-secondary)">Coins</span></div>
+          <div style="font-size:12px;color:var(--text-muted)">${profile.email || '-'}</div>
+          <div style="font-family:var(--font-display);font-size:22px;color:var(--gold);margin-top:10px">${r.amount} <span style="font-size:12px;color:var(--text-secondary)">Coins</span></div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Requested: ${r.created_at ? new Date(r.created_at).toLocaleString('en-IN') : '-'}</div>
         </div>
-        <div class="action-btns" style="align-items:flex-start;flex-direction:column;gap:8px">
+        <div style="display:flex; align-items:center; gap:20px">
+          <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:8px 12px; border-radius:6px; min-width:180px">
+             <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px">Linked Payout Method</div>
+             <div style="display:flex; align-items:center; gap:8px">
+                <div style="color:var(--gold); font-size:16px"><i class="fa-solid fa-wallet"></i></div>
+                <div>
+                   <div style="font-size:13px; font-weight:700; color:var(--text-primary)">${r.payout_details?.app || 'N/A'}</div>
+                   <div style="font-size:12px; color:var(--gold); font-family:monospace">${r.payout_details?.upi || 'No UPI ID'}</div>
+                </div>
+             </div>
+          </div>
+          <div class="action-btns" style="align-items:flex-start;flex-direction:column;gap:8px">
           <button class="btn-approve" style="padding:8px 16px" onclick="processWithdrawal('${r.id}', 'approve')"><i class="fa-solid fa-check"></i> Approve & Send Money</button>
           <button class="btn-reject" style="padding:8px 16px" onclick="rejectWithdrawal('${r.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
         </div>

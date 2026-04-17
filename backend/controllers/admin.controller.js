@@ -58,6 +58,15 @@ const updateUserStatus = async (req, res) => {
     const { data, error } = await supabase.from('profiles').update({ status }).eq('id', req.params.id).select().single();
     if (error) return res.status(400).json({ success: false, message: error.message });
     await supabase.from('notifications').insert({ user_id: req.params.id, type: 'account', title: `Account ${status}`, message: `Your account has been ${status} by admin.` });
+    
+    // Real-time emit
+    const io = req.app.get('io');
+    if (io) {
+      const { userToSocket } = require('../socket/socket.js');
+      const targetSocket = userToSocket.get(req.params.id);
+      if (targetSocket) io.to(targetSocket).emit('silent_notification');
+    }
+
     res.json({ success: true, message: `User ${status}.`, user: data });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -134,24 +143,14 @@ const reviewKYC = async (req, res) => {
 };
 const getWithdrawRequests = async (req, res) => {
   try {
-    // First withdraw requests fetch பண்ணு
-    const { data: requests } = await supabase
+    const { data: requests, error } = await supabase
       .from('withdraw_requests')
-      .select('*')
+      .select('*, profiles!withdraw_requests_user_id_fkey(username, player_id)')
       .eq('status', 'pending')
       .order('queue_position', { ascending: true });
 
-    // Profile info separately fetch பண்ணு
-    const result = await Promise.all((requests || []).map(async (r) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, email, player_id')
-        .eq('id', r.user_id)
-        .single();
-      return { ...r, profiles: profile };
-    }));
-
-    res.json({ success: true, requests: result });
+    if (error) throw error;
+    res.json({ success: true, requests: requests || [] });
   } catch (err) {
     console.error('getWithdrawRequests error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -181,6 +180,14 @@ const processWithdraw = async (req, res) => {
       }
       await supabase.from('transactions').update({ status: 'failed' }).eq('reference_id', req.params.id).eq('type', 'withdraw');
       await supabase.from('notifications').insert({ user_id: wr.user_id, type: 'withdraw', title: 'Withdrawal Rejected ❌', message: `${wr.amount} coins refunded. Reason: ${rejection_reason || 'N/A'}` });
+    }
+
+    // Real-time emit
+    const io = req.app.get('io');
+    if (io) {
+      const { userToSocket } = require('../socket/socket.js');
+      const targetSocket = userToSocket.get(wr.user_id);
+      if (targetSocket) io.to(targetSocket).emit('silent_notification');
     }
 
     res.json({ success: true, message: `Withdrawal ${action}d.` });

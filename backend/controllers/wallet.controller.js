@@ -59,7 +59,13 @@ const verifyDeposit = async (req, res) => {
     await supabase.from('transactions').update({ status: 'success', balance_after: newBalance }).eq('id', txn.id);
 
     // Notification
-    await supabase.from('notifications').insert({ user_id: txn.user_id, type: 'deposit', title: 'Deposit Successful ✅', message: `₹${txn.amount} credited to your wallet as ${txn.amount} coins.` });
+    const { sendNotification } = require('../services/notification.service');
+    await sendNotification({ 
+      user_id: txn.user_id, 
+      type: 'deposit', 
+      title: 'Deposit Successful ✅', 
+      message: `₹${txn.amount} credited to your wallet as ${txn.amount} coins.` 
+    });
 
     res.json({ success: true, message: 'Coins added!', balance: newBalance });
   } catch (err) {
@@ -151,11 +157,12 @@ const requestWithdraw = async (req, res) => {
     });
 
     // Notification
-    await supabase.from('notifications').insert({ 
-      user_id: req.user.id, 
-      type: 'withdraw', 
-      title: 'Withdrawal Requested', 
-      message: `${amount} coins withdrawal pending. Queue: #${queuePos}` 
+    const { sendNotification } = require('../services/notification.service');
+    await sendNotification({ 
+      user_id: req.user.id,
+      type: 'withdraw',
+      title: 'Withdrawal Requested ⏳',
+      message: `Your request for ${amount} coins is under review.`
     });
 
     res.json({ success: true, message: 'Request submitted!', queue_position: queuePos, new_balance: newBalance });

@@ -1,19 +1,38 @@
+// ─── CONFIG ──────────────────────────────────────────────
+const API_BASE = (window.location.port === '5500' || window.location.port === '3000') 
+  ? 'http://localhost:5000/api' 
+  : '/api';
+
+// ─── FORMAT HELPERS ───────────────────────────────────────
+const fmt = {
+  username: (name) => name ? (name.startsWith('@') ? name : '@' + name) : '',
+  coins   : (n) => `${Number(n||0).toLocaleString()} <i class="fa-solid fa-coins"></i>`,
+  inr     : (n) => `₹${Number(n||0).toLocaleString()}`,
+  time    : (d) => new Date(d).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+  relTime : (d) => {
+    const s = Math.floor((Date.now() - new Date(d)) / 1000);
+    if (s < 60)    return 'just now';
+    if (s < 3600)  return `${Math.floor(s/60)}m ago`;
+    if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+    return `${Math.floor(s/86400)}d ago`;
+  },
+  countdown: (t) => {
+    const m = Math.floor(t/60), s = t%60;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  },
+  rankClass: (rank) => ({ Bronze:'badge-bronze', Silver:'badge-silver', Gold:'badge-gold', Platinum:'badge-platinum' }[rank] || 'badge-bronze'),
+};
+
 // ─── SESSION HELPERS ─────────────────────────────────────
 const getToken        = () => localStorage.getItem('px_token');
 const getRefreshToken = () => localStorage.getItem('px_refresh');
 const getUser         = () => { try { return JSON.parse(localStorage.getItem('px_user')); } catch { return null; } };
 const isLoggedIn      = () => !!getToken();
 
-// Auto-apply theme on load
-(() => {
-  const u = getUser();
-  if (u?.settings?.theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-})();
-
-const setSession = (token, refreshToken, user) => {
-  localStorage.setItem('px_token', token);
-  localStorage.setItem('px_refresh', refreshToken);
-  localStorage.setItem('px_user', JSON.stringify(user));
+const setSession = (token, refresh, user) => {
+  if (token) localStorage.setItem('px_token', token);
+  if (refresh) localStorage.setItem('px_refresh', refresh);
+  if (user) localStorage.setItem('px_user', JSON.stringify(user));
 };
 
 const clearSession = () => {
@@ -22,8 +41,6 @@ const clearSession = () => {
   localStorage.removeItem('px_user');
 };
 
-// ─── API CORE ────────────────────────────────────────────
-const API_BASE = '/api';
 let _refreshing = false;
 
 const api = async (endpoint, options = {}, retry = true) => {
@@ -97,7 +114,6 @@ const AuthAPI = {
 const UserAPI = {
   getProfile     : ()  => api('/user/profile'),
   updateProfile  : (d) => api('/user/profile',        { method: 'PUT',  body: d }),
-  submitKYC      : (d) => api('/user/kyc',             { method: 'POST', body: d }),
   changePassword : (d) => api('/user/change-password', { method: 'POST', body: d }),
   updateSettings : (s) => api('/user/settings',        { method: 'PUT',  body: { settings: s } }),
   getNotifications: () => api('/user/notifications'),
@@ -138,8 +154,8 @@ const AdminAPI = {
   getDashboard   : ()              => api('/admin/dashboard'),
   getUsers       : (params='')     => api(`/admin/users?${params}`),
   updateUserStatus:(id, status)    => api(`/admin/users/${id}/status`,  { method: 'PUT',  body: { status } }),
-  getKYC         : ()              => api('/admin/kyc'),
-  reviewKYC      : (id, action, reason) => api(`/admin/kyc/${id}`,     { method: 'PUT',  body: { action, rejection_reason: reason } }),
+  getKYC         : ()              => KYCAPI.getAdminList(),
+  reviewKYC      : (requestId, status, reason) => KYCAPI.review({ requestId, status, reason }),
   getWithdrawals : ()              => api('/admin/withdrawals'),
   processWithdraw: (id, action, reason) => api(`/admin/withdrawals/${id}`, { method: 'PUT', body: { action, rejection_reason: reason } }),
   createTournament:(d)             => api('/admin/tournaments',         { method: 'POST', body: d }),
@@ -158,7 +174,23 @@ const FriendAPI = {
   removeFriend  : (id) => api(`/friends/${id}`, { method: 'DELETE' }),
   sendRequest   : (username) => api('/friends/request', { method: 'POST', body: { targetUsername: username } }),
   getRequests   : () => api('/friends/requests'),
-  respondRequest: (id, action) => api('/friends/requests', { method: 'PUT', body: { id, action } })
+  respondRequest: (id, action) => api('/friends/requests', { method: 'PUT', body: { id, action } }),
+  getChallenges: () => api('/friends/challenges'),
+  respondChallenge: (id, action) => api('/friends/challenges', { method: 'PUT', body: { id, action } }),
+};
+
+// ─── KYC API ─────────────────────────────────────────────
+const KYCAPI = {
+  submit: (formData) => {
+    const token = getToken();
+    return fetch(`${API_BASE}/kyc/submit`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData 
+    }).then(res => res.json());
+  },
+  getAdminList: () => api('/kyc/admin/list'),
+  review: (data) => api('/kyc/admin/review', { method: 'POST', body: data })
 };
 
 // ─── TOAST ───────────────────────────────────────────────
@@ -199,79 +231,23 @@ const requireAuth  = () => { if (!isLoggedIn()) { window.location.href = '/pages
 const requireGuest = () => { if (isLoggedIn())  { window.location.href = '/pages/dashboard.html'; return false; } return true; };
 
 // ─── SIDEBAR LOADER ──────────────────────────────────────
-/**
- * Fetches sidebar.html, injects it into #sidebar-container (executing
- * its inline <script>), then wires the logout button as a fallback.
- * Call this instead of raw innerHTML on every page.
- */
 const loadSidebar = async () => {
   const container = document.getElementById('sidebar-container');
   if (!container) return;
   try {
-    const res  = await fetch('/components/sidebar.html');
+    const res = await fetch('/components/sidebar.html');
     const html = await res.text();
-    // createContextualFragment executes <script> tags — innerHTML does NOT.
-    const frag = document.createRange().createContextualFragment(html);
-    container.appendChild(frag);
-
-    // Auto-inject mobile hamburger menu
-    const topbarLeft = document.querySelector('.topbar-left');
-    if (topbarLeft && !document.getElementById('mobile-menu-btn')) {
-      const btn = document.createElement('button');
-      btn.id = 'mobile-menu-btn';
-      btn.className = 'mobile-menu-btn';
-      btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
-      btn.onclick = (e) => {
-        const sb = document.getElementById('sidebar');
-        if (sb) sb.classList.toggle('open');
-      };
-      topbarLeft.prepend(btn);
-      
-      // Close sidebar when clicking outside on mobile
-      document.addEventListener('click', (e) => {
-        const sb = document.getElementById('sidebar');
-        if (sb && sb.classList.contains('open') && window.innerWidth <= 768) {
-          if (!sb.contains(e.target) && !btn.contains(e.target)) {
-            sb.classList.remove('open');
-          }
-        }
-      });
-    }
-
+    container.innerHTML = html;
+    
+    // Manually execute scripts in injected HTML
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(oldScript => {
+      const newScript = document.createElement('script');
+      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+      oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
   } catch (err) {
     console.error('loadSidebar error:', err);
   }
-  // Safety-net: always wire up logout regardless of whether the
-  // sidebar's own script ran, so the button works even if the
-  // component script is stripped or fails.
-  const setupLogout = () => {
-    const btn = document.getElementById('sb-logout');
-    if (!btn) return;
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      await AuthAPI.logout();
-    });
-  };
-  // The sidebar may still be rendering frames after appendChild.
-  setTimeout(setupLogout, 0);
-};
-
-// ─── FORMAT HELPERS ───────────────────────────────────────
-const fmt = {
-  username: (name) => name ? (name.startsWith('@') ? name : '@' + name) : '',
-  coins   : (n) => `${Number(n||0).toLocaleString()} <i class="fa-solid fa-coins"></i>`,
-  inr     : (n) => `₹${Number(n||0).toLocaleString()}`,
-  time    : (d) => new Date(d).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }),
-  relTime : (d) => {
-    const s = Math.floor((Date.now() - new Date(d)) / 1000);
-    if (s < 60)    return 'just now';
-    if (s < 3600)  return `${Math.floor(s/60)}m ago`;
-    if (s < 86400) return `${Math.floor(s/3600)}h ago`;
-    return `${Math.floor(s/86400)}d ago`;
-  },
-  countdown: (t) => {
-    const m = Math.floor(t/60), s = t%60;
-    return `${m}:${String(s).padStart(2,'0')}`;
-  },
-  rankClass: (rank) => ({ Bronze:'badge-bronze', Silver:'badge-silver', Gold:'badge-gold', Platinum:'badge-platinum' }[rank] || 'badge-bronze'),
 };

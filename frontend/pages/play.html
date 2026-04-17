@@ -295,6 +295,14 @@ if (urlParams.get('challenge')) {
    selectMode('friend', document.querySelectorAll('.mode-card')[1]);
    setTimeout(() => sendFriendInvite(urlParams.get('challenge')), 500);
 }
+
+if (urlParams.get('acceptChallenge')) {
+   const fromUserId = urlParams.get('acceptChallenge');
+   const timer = parseInt(urlParams.get('timer') || '5');
+   pendingInvite = { fromUserId, fromUsername: 'Email Opponent', timer };
+   document.getElementById('invite-modal-desc').textContent = `Email Challenge: ${timer}-minute game!`;
+   document.getElementById('invite-modal').classList.add('active');
+}
 </script>
 </body>
 </html>

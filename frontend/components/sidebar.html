@@ -1,11 +1,17 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<div id="global-mobile-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"
+  onclick="document.getElementById('sidebar').classList.remove('open'); this.style.display='none';"></div>
+<button class="global-mobile-menu-btn"
+  onclick="document.getElementById('sidebar').classList.toggle('open'); document.getElementById('global-mobile-overlay').style.display = document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';"><i
+    class="fa-solid fa-bars"></i></button>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <a href="/pages/dashboard.html" class="brand">PHOENIX<span>X</span></a>
     <div class="tagline"></div>
   </div>
   <div class="sidebar-user">
-    <div class="sidebar-avatar" id="sb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
+    <div class="sidebar-avatar" id="sb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P
+    </div>
     <div class="sidebar-user-info">
       <div class="name" id="sb-username">Loading...</div>
       <div class="iq">IQ: <span id="sb-iq">100</span></div>
@@ -48,10 +54,11 @@
     <a href="/pages/admin.html" id="sb-admin" class="nav-item" style="color:var(--orange);display:none">
       <span class="icon"><i class="fa-solid fa-shield-halved"></i></span> Admin Panel
     </a>
-  <div class="live-radar-box">
+    <div class="live-radar-box">
       <div class="nav-section-title" style="padding:0; margin-bottom:8px">LIVE RADAR</div>
       <div class="nav-item">
-        <span class="icon"><i class="fa-solid fa-satellite-dish" style="color:var(--success);animation:pulse-red 1.5s infinite;"></i></span>
+        <span class="icon"><i class="fa-solid fa-satellite-dish"
+            style="color:var(--success);animation:pulse-red 1.5s infinite;"></i></span>
         <span><span data-live="online" style="font-weight:700">0</span> Online</span>
       </div>
       <div class="nav-item">
@@ -65,50 +72,76 @@
   </nav>
 </aside>
 <script>
-  (function () {
-    const user = (() => { try { return JSON.parse(localStorage.getItem('px_user')); } catch { return null; } })();
-    if (user) {
-      const u = document.getElementById('sb-username');
-      const iq = document.getElementById('sb-iq');
-      const av = document.getElementById('sb-avatar');
-      const adminLnk = document.getElementById('sb-admin');
-      if (u) u.textContent = fmt.username(user.username || 'Player');
-      if (iq) iq.textContent = user.iq_level || 100;
-      
-      if (user.profile_image) {
-        if (av) av.innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-      } else {
-        if (av) av.textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
-      }
+  // Centralized Sidebar Sync System
+  window.updateSidebarUI = function (userData) {
+    if (!userData) return;
+    const elements = {
+      name: document.getElementById('sb-username'),
+      iq: document.getElementById('sb-iq'),
+      avatar: document.getElementById('sb-avatar'),
+      balance: document.getElementById('sb-balance'),
+      admin: document.getElementById('sb-admin')
+    };
 
-      if (adminLnk && user.is_admin) adminLnk.style.display = '';
+    if (elements.name) elements.name.textContent = userData.full_name || userData.username || 'Player';
+    if (elements.iq) elements.iq.textContent = userData.iq_level || 100;
+    if (elements.balance && userData.coins !== undefined) {
+      elements.balance.textContent = Number(userData.coins).toLocaleString();
     }
-    const cur = window.location.pathname.split('/').pop().replace('.html', '');
-    document.querySelectorAll('.nav-item[data-page]').forEach(el => { if (el.dataset.page === cur) el.classList.add('active'); });
-    const lb = document.getElementById('sb-logout');
-    if (lb) lb.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (typeof AuthAPI !== 'undefined') { await AuthAPI.logout(); return; }
-      try { await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('px_token')}` } }); } catch { }
-      localStorage.removeItem('px_token'); localStorage.removeItem('px_refresh'); localStorage.removeItem('px_user');
-      window.location.href = '/pages/login.html';
-    });
+
+    if (userData.profile_image && elements.avatar) {
+      elements.avatar.innerHTML = `<img src="${userData.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else if (elements.avatar) {
+      elements.avatar.textContent = (userData.full_name || userData.username || 'P')[0].toUpperCase();
+    }
+    if (elements.admin) elements.admin.style.display = userData.is_admin ? '' : 'none';
+  };
+
+  (function initSidebar() {
     const tk = localStorage.getItem('px_token');
-    if (tk) {
-      fetch('/api/wallet/balance', { headers: { Authorization: `Bearer ${tk}` } })
-        .then(r => r.json()).then(d => { const el = document.getElementById('sb-balance'); if (el && d.success) el.textContent = (d.wallet.balance || 0).toLocaleString(); }).catch(() => { });
+    if (!tk) return;
+    const base = (typeof API_BASE !== 'undefined') ? API_BASE : '/api';
 
-      // Dynamically check the database for admin status so changes reflect without logging out
-      fetch('/api/user/profile', { headers: { Authorization: `Bearer ${tk}` } })
-        .then(r => r.json()).then(d => {
-          if (d.success && d.user) {
-            localStorage.setItem('px_user', JSON.stringify(d.user)); // Keep local session fresh
-            const adminLnk = document.getElementById('sb-admin');
-            if (adminLnk) {
-              adminLnk.style.display = d.user.is_admin ? '' : 'none';
-            }
-          }
-        }).catch(() => { });
-    }
+    // 1. Initial Render from Cache
+    try {
+      const cached = JSON.parse(localStorage.getItem('px_user'));
+      if (cached) window.updateSidebarUI(cached);
+    } catch (e) { }
+
+    // 2. Active Sync Function
+    const syncData = async () => {
+      try {
+        const [pRes, bRes] = await Promise.all([
+          fetch(`${base}/user/profile`, { headers: { Authorization: `Bearer ${tk}` } }).then(r => r.json()),
+          fetch(`${base}/wallet/balance`, { headers: { Authorization: `Bearer ${tk}` } }).then(r => r.json())
+        ]);
+
+        if (pRes.success && bRes.success) {
+          const combined = { ...pRes.user, coins: bRes.wallet.balance };
+          localStorage.setItem('px_user', JSON.stringify(combined));
+          window.updateSidebarUI(combined);
+        }
+      } catch (err) {
+        console.warn('Sidebar sync failed:', err);
+      }
+    };
+
+    // 3. Execution
+    syncData();
+    setInterval(syncData, 15000); // Sync every 15s to keep it fresh but not heavy
+
+    // 4. Page Active State
+    const cur = window.location.pathname.split('/').pop().replace('.html', '') || 'dashboard';
+    document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+      if (el.dataset.page === cur) el.classList.add('active');
+    });
+
+    // 5. Logout
+    const lb = document.getElementById('sb-logout');
+    if (lb) lb.onclick = (e) => {
+      e.preventDefault();
+      localStorage.clear();
+      window.location.href = '/pages/login.html';
+    };
   })();
 </script>

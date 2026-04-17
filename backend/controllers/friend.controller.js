@@ -14,13 +14,18 @@ const sendRequest = async (req, res) => {
     if (!targetUsername) return res.status(400).json({ success: false, message: 'Username is required.' });
 
     const normalized = normalizeUsername(targetUsername);
+    const rawName = targetUsername.replace(/^@+/, '').toLowerCase();
 
     if (normalized === req.user.username) {
       return res.status(400).json({ success: false, message: 'You cannot send a friend request to yourself.' });
     }
 
-    // Find user
-    const { data: targetUser } = await supabase.from('profiles').select('id').eq('username', normalized).single();
+    // Find user - more flexible search
+    const { data: targetUser } = await supabase.from('profiles')
+      .select('id')
+      .or(`username.eq.${normalized},username.eq.${rawName}`)
+      .maybeSingle();
+    
     if (!targetUser) return res.status(404).json({ success: false, message: 'User not found.' });
 
     // Check if already friends
@@ -51,12 +56,21 @@ const sendRequest = async (req, res) => {
     if (error) return res.status(400).json({ success: false, message: error.message });
 
     // Notify receiver
-    await supabase.from('notifications').insert({
+    const { sendNotification } = require('../services/notification.service');
+    await sendNotification({
       user_id: targetUser.id,
       type: 'friend_request',
       title: 'New Friend Request',
       message: `${req.user.username} sent you a friend request.`,
     });
+
+    // Real-time emit
+    const io = req.app.get('io');
+    if (io) {
+      const { userToSocket } = require('../socket/socket.js'); 
+      const targetSocket = userToSocket.get(targetUser.id);
+      if (targetSocket) io.to(targetSocket).emit('silent_notification');
+    }
 
     res.json({ success: true, message: 'Friend request sent!' });
   } catch (err) {
@@ -67,12 +81,22 @@ const sendRequest = async (req, res) => {
 
 const getRequests = async (req, res) => {
   try {
-    const { data: incoming } = await supabase.from('friend_requests')
-      .select('id, sender_id, status, created_at, sender:sender_id(username)')
-      .eq('receiver_id', req.user.id)
-      .eq('status', 'pending');
+    const [incoming, outgoing] = await Promise.all([
+      supabase.from('friend_requests')
+        .select('id, sender_id, status, created_at, sender:sender_id(username)')
+        .eq('receiver_id', req.user.id)
+        .eq('status', 'pending'),
+      supabase.from('friend_requests')
+        .select('id, receiver_id, status, created_at, receiver:receiver_id(username)')
+        .eq('sender_id', req.user.id)
+        .eq('status', 'pending')
+    ]);
 
-    res.json({ success: true, requests: incoming || [] });
+    res.json({ 
+      success: true, 
+      incoming: incoming.data || [], 
+      outgoing: outgoing.data || [] 
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
@@ -100,12 +124,13 @@ const respondRequest = async (req, res) => {
         user1_id: reqData.sender_id,
         user2_id: reqData.receiver_id
       });
-      // Notification
-      await supabase.from('notifications').insert({
+      // Notify sender
+      const { sendNotification } = require('../services/notification.service');
+      await sendNotification({
         user_id: reqData.sender_id,
         type: 'friend_request',
         title: 'Friend Request Accepted',
-        message: `${req.user.username} accepted your friend request.`,
+        message: `${req.user.username} accepted your friend request!`,
       });
     }
 
@@ -159,4 +184,51 @@ const removeFriend = async (req, res) => {
   }
 };
 
-module.exports = { sendRequest, getRequests, respondRequest, getFriends, removeFriend };
+const getChallenges = async (req, res) => {
+  try {
+    const { data: incoming } = await supabase.from('game_challenges')
+      .select('*, from_user:from_user_id(username)')
+      .eq('to_user_id', req.user.id)
+      .eq('status', 'pending');
+
+    const { data: outgoing } = await supabase.from('game_challenges')
+      .select('*, to_user:to_user_id(username)')
+      .eq('from_user_id', req.user.id)
+      .eq('status', 'pending');
+
+    res.json({ 
+      success: true, 
+      challenges: incoming || [],
+      outgoingChallenges: outgoing || []
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const respondChallenge = async (req, res) => {
+  try {
+    const { id, action } = req.body; // action: 'accepted' or 'declined'
+    
+    const { error } = await supabase.from('game_challenges')
+      .update({ status: action })
+      .eq('id', id)
+      .eq('to_user_id', req.user.id);
+
+    if (error) return res.status(400).json({ success: false, message: error.message });
+    
+    res.json({ success: true, message: `Challenge ${action}.` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { 
+  sendRequest, 
+  getRequests, 
+  respondRequest, 
+  getFriends, 
+  removeFriend,
+  getChallenges,
+  respondChallenge
+};

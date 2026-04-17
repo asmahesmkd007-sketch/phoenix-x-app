@@ -170,21 +170,46 @@ module.exports = (io) => {
       const targetSocket = userToSocket.get(targetUserId);
       const isPlaying = Array.from(activeGames.values()).some(g => g.player1.userId === targetUserId || g.player2.userId === targetUserId);
 
-      if (isPlaying) {
-        try {
-          await supabase.from('notifications').insert({
-            user_id: targetUserId,
-            type: 'challenge',
-            title: 'New Challenge',
-            message: `${fromUsername} challenged you to a ${timer}-minute game!`,
-            read: false
+      try {
+        // 1. Persist challenge in DB
+        const { data: existing } = await supabase.from('game_challenges')
+          .select('id').eq('from_user_id', fromUserId).eq('to_user_id', targetUserId).eq('status', 'pending').maybeSingle();
+        
+        if (!existing) {
+          await supabase.from('game_challenges').insert({
+            from_user_id: fromUserId,
+            to_user_id: targetUserId,
+            timer: timer,
+            status: 'pending'
           });
-        } catch (e) { console.error('Silent invite notify error:', e); }
+        }
 
-        if (targetSocket) io.to(targetSocket).emit('silent_notification');
-      } else {
-        if (targetSocket) io.to(targetSocket).emit('friend_invite', { fromUserId, fromUsername, timer });
-        else socket.emit('invite_error', { message: 'Player is offline.' });
+        // 2. Always save a persistent site notification
+        const { sendNotification } = require('../services/notification.service');
+        await sendNotification({
+          user_id: targetUserId,
+          type: 'challenge',
+          title: 'New Chess Challenge! ♟️',
+          message: `${fromUsername} has challenged you to a ${timer}-minute match.`,
+        });
+
+        // 3. Handle Real-time delivery
+        const sockets = userSockets.get(targetUserId);
+        if (sockets && sockets.size > 0) {
+          if (isPlaying) {
+             // If already in a game, just show a silent notification/toast
+             sockets.forEach(sid => io.to(sid).emit('silent_notification'));
+          } else {
+             // Otherwise, show the big "Accept/Decline" modal
+             sockets.forEach(sid => {
+                io.to(sid).emit('friend_invite', { fromUserId, fromUsername, timer });
+             });
+          }
+        } else {
+           socket.emit('invite_info', { message: 'Player is offline. They will see your challenge when they log in!' });
+        }
+      } catch (e) {
+        console.error('Challenge invite error:', e);
       }
     });
 
@@ -495,3 +520,7 @@ module.exports = (io) => {
     io.emit('live_info', { online_users: userSockets.size, active_matches: activeGames.size });
   }
 };
+
+module.exports.userToSocket = userToSocket;
+module.exports.socketToUser = socketToUser;
+module.exports.activeGames = activeGames;

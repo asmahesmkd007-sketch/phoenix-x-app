@@ -1,451 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard – PHOENIX X</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | PHOENIX X</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/global.css">
   <style>
-    /* Welcome Overlay Styles - REDESIGNED LUX GOLD LOOK */
-    .welcome-overlay {
-      position: fixed; inset: 0; z-index: 9999;
-      background: radial-gradient(circle at center, rgba(10,10,10,0.4) 0%, rgba(0,0,0,0.85) 100%);
-      backdrop-filter: blur(25px);
-      display: none; align-items: center; justify-content: center;
-      opacity: 0; transition: opacity 0.8s ease;
+    .sync-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-primary);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s;
     }
-    .welcome-overlay.active { display: flex; opacity: 1; }
-    
-    .welcome-card {
-       position: relative;
-       display: flex; flex-direction: column; align-items: center; gap: 15px;
-       padding: 60px; text-align: center;
-       transform: scale(0.85); transition: all 1s cubic-bezier(0.2, 1, 0.3, 1);
-    }
-    .welcome-overlay.active .welcome-card { transform: scale(1); }
-    
-    .welcome-avatar-hex {
-       position: relative; width: 140px; height: 140px;
-       margin-bottom: 20px;
-    }
-    .welcome-avatar-hex::before {
-       content: ''; position: absolute; inset: -10px;
-       border: 2px solid var(--gold); border-radius: 50%;
-       border-top-color: transparent; border-bottom-color: transparent;
-       animation: rotate-ring 3s linear infinite;
-       box-shadow: 0 0 30px rgba(212,175,55,0.4);
-    }
-    .welcome-avatar {
-       width: 100%; height: 100%; border-radius: 50%;
-       object-fit: cover; border: 4px solid #000;
-       position: relative; z-index: 2;
-    }
-    
-    @keyframes rotate-ring { to { transform: rotate(360deg); } }
 
-    .shimmer-text {
-       font-family: var(--font-display);
-       background: linear-gradient(90deg, #888 20%, #fff 50%, #888 80%);
-       background-size: 200% auto;
-       -webkit-background-clip: text;
-       -webkit-text-fill-color: transparent;
-       animation: shimmer-reveal 2.5s linear infinite;
-       font-size: 14px; letter-spacing: 6px; text-transform: uppercase; font-weight: 700;
-       opacity: 0; transform: translateY(10px); transition: all 1s 0.3s;
+    .sync-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
-    .welcome-overlay.active .shimmer-text { opacity: 1; transform: translateY(0); }
-    
-    .username-reveal {
-       font-family: var(--font-display); font-size: 48px; font-weight: 900;
-       color: #fff; text-shadow: 0 0 40px rgba(255,255,255,0.2);
-       letter-spacing: -2px; opacity: 0; transform: scale(1.1);
-       transition: all 1.2s 0.6s cubic-bezier(0.2, 1, 0.3, 1);
-    }
-    .welcome-overlay.active .username-reveal { opacity: 1; transform: scale(1); letter-spacing: 1px; }
-
-    @keyframes shimmer-reveal { to { background-position: 200% center; } }
-
-    /* Performance stabilization to prevent 'shaking' */
-    .stat-value { min-height: 38px; display: flex; align-items: center; }
-    .avatar-initial { flex-shrink: 0; }
-    .card { min-height: 100px; }
   </style>
 </head>
+
 <body>
-<div class="app-layout">
-  <!-- WELCOME OVERLAY -->
-  <div id="welcome-overlay" class="welcome-overlay">
-     <div class="welcome-card">
-        <div class="welcome-avatar-hex" id="welcome-avatar-container"></div>
-        <div class="shimmer-text">Welcome Back</div>
-        <div class="username-reveal" id="welcome-username-text">Explorer</div>
-        <div style="font-size: 11px; color: var(--gold); margin-top: 15px; letter-spacing: 3px; opacity: 0.7;">
-           <i class="fa-solid fa-chess-king"></i> PHOENIX X ELITE
-        </div>
-     </div>
-  </div>
-  
-  <!-- SIDEBAR -->
-  <div id="sidebar-container"></div>
 
-  <div class="main-content">
-    <!-- TOPBAR -->
-    <div class="topbar">
-      <div class="topbar-left">
-        <div class="page-title">DASHBOARD</div>
-      </div>
-      <div class="topbar-right">
-        <div class="topbar-player-id" id="tb-player-id" title="Click to copy">PX-??????</div>
-        <div style="position:relative">
-          <button class="notif-btn" id="notif-btn"><i class="fa-solid fa-bell"></i><span class="notif-count" id="notif-count" style="display:none">0</span></button>
-          <div class="notif-dropdown" id="notif-dropdown">
-            <div class="notif-header"><i class="fa-solid fa-bell"></i> Notifications</div>
-            <div id="notif-list"><div style="padding:20px;text-align:center;color:var(--text-muted)">No notifications</div></div>
+  <div class="sync-overlay" id="sync-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:20px; color:var(--gold); letter-spacing:2px; font-weight:700">PHOENIX X SYNCING...</div>
+  </div>
+
+  <div class="app-layout">
+    <!-- SIDEBAR CONTAINER -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="page-title">DASHBOARD</div>
+          <div class="live-badge">
+            <div class="live-dot"></div> LIVE
           </div>
         </div>
-        <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
-      </div>
-    </div>
-
-    <div class="page-content">
-      <!-- USER INFO CARD -->
-      <div class="card mb-24" style="background:linear-gradient(135deg,rgba(91,192,235,0.06),rgba(255,107,53,0.04))">
-        <div class="flex-between" style="flex-wrap:wrap;gap:16px">
-          <div class="flex gap-16" style="align-items:center">
-            <div class="avatar-initial" id="dash-avatar" style="width:56px;height:56px;font-size:22px">P</div>
-            <div>
-              <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px">WELCOME BACK</div>
-              <div style="font-family:var(--font-display);font-size:22px;font-weight:700" id="dash-username">Player</div>
-              <div class="flex gap-8" style="margin-top:4px;align-items:center">
-                <span class="badge badge-bronze" id="dash-rank-badge">Bronze</span>
-                <span style="font-size:12px;color:#5bc0eb">IQ: <span id="dash-iq">100</span></span>
-                <span id="dash-kyc-badge"></span>
+        <div class="topbar-right">
+          <div class="topbar-player-id" id="tb-player-id" title="Click to copy">PX-SYNCING...</div>
+          <div style="position:relative">
+            <button class="notif-btn" id="notif-btn"><i class="fa-solid fa-bell"></i><span class="notif-count"
+                id="notif-count" style="display:none">0</span></button>
+            <div class="notif-dropdown" id="notif-dropdown">
+              <div class="notif-header"><i class="fa-solid fa-bell"></i> Notifications</div>
+              <div id="notif-list">
+                <div style="padding:20px;text-align:center;color:var(--text-muted)">No notifications</div>
               </div>
             </div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'">P</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- HERO SECTION -->
+        <div class="card mb-24" style="background:linear-gradient(135deg,rgba(212,175,55,0.08),rgba(15,82,186,0.05))">
+          <div class="flex-between" style="flex-wrap:wrap;gap:20px">
+            <div class="flex gap-20" style="align-items:center">
+              <div class="avatar-initial" id="dash-avatar"
+                style="width:70px;height:70px;font-size:28px;box-shadow:var(--glow-teal)">P</div>
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);letter-spacing:2px;font-weight:700">WELCOME BACK
+                  CHAMPION</div>
+                <div style="font-family:var(--font-display);font-size:28px;font-weight:900;color:#fff"
+                  id="dash-username">Player</div>
+                <div class="flex gap-12" style="margin-top:8px;align-items:center">
+                  <span class="badge" id="dash-rank-badge">Bronze</span>
+                  <span style="font-size:13px;color:var(--gold);font-weight:700"><i class="fa-solid fa-brain"></i> IQ:
+                    <span id="dash-iq">100</span></span>
+                  <span id="dash-kyc-badge"></span>
+                </div>
+              </div>
+            </div>
             <div class="flex gap-12">
-              <a href="/pages/play.html" class="btn btn-primary"><i class="fa-solid fa-chess-pawn"></i> Play Now</a>
-              <a href="/pages/paid-tournament.html" class="btn btn-orange"><i class="fa-solid fa-trophy"></i> Tournament</a>
+              <a href="/pages/play.html" class="btn btn-primary btn-lg"><i class="fa-solid fa-chess"></i> PLAY NOW</a>
+              <a href="/pages/paid-tournament.html" class="btn btn-gold btn-lg"><i class="fa-solid fa-trophy"></i>
+                TOURNAMENT</a>
             </div>
-            <a href="/pages/wallet.html" class="btn btn-secondary"><i class="fa-solid fa-coins"></i> Wallet</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- STATS -->
-      <div class="stats-grid mb-24">
-        <div class="stat-card teal">
-          <div class="stat-label">Wallet Balance</div>
-          <div class="stat-value" id="stat-balance">0</div>
-          <div class="stat-sub">Coins available</div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-label">Matches Played</div>
-          <div class="stat-value" id="stat-matches">0</div>
-          <div class="stat-sub">Total games</div>
-        </div>
-        <div class="stat-card gold">
-          <div class="stat-label">Win Rate</div>
-          <div class="stat-value" id="stat-winrate">0%</div>
-          <div class="stat-sub"><span id="stat-wins">0</span>W / <span id="stat-losses">0</span>L / <span id="stat-draws">0</span>D</div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-label">Best Streak</div>
-          <div class="stat-value" id="stat-streak">0</div>
-          <div class="stat-sub">Current: <span id="stat-cur-streak">0</span></div>
-        </div>
-      </div>
-
-      <div class="grid-2 mb-24">
-        <!-- QUICK ACTIONS -->
-        <div class="card">
-          <div class="card-title">Quick Actions</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <a href="/pages/play.html" class="quick-btn primary">
-              <div class="qb-icon"><i class="fa-solid fa-chess-pawn"></i></div>
-              <div class="qb-title">Play Chess</div>
-              <div class="qb-sub">Find opponent</div>
-            </a>
-            <a href="/pages/free-tournament.html" class="quick-btn">
-              <div class="qb-icon"><i class="fa-solid fa-gamepad"></i></div>
-              <div class="qb-title">Free Tournament</div>
-              <div class="qb-sub">No entry fee</div>
-            </a>
-            <a href="/pages/paid-tournament.html" class="quick-btn">
-              <div class="qb-icon"><i class="fa-solid fa-trophy"></i></div>
-              <div class="qb-title">Paid Tournament</div>
-              <div class="qb-sub">Win coins</div>
-            </a>
-            <a href="/pages/wallet.html" class="quick-btn">
-              <div class="qb-icon"><i class="fa-solid fa-credit-card"></i></div>
-              <div class="qb-title">Add Money</div>
-              <div class="qb-sub">Via Razorpay</div>
-            </a>
           </div>
         </div>
 
-        <!-- LIVE INFO -->
-        <div class="card">
-          <div class="card-title">Live Activity</div>
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div style="background:rgba(91,192,235,0.06);border:1px solid rgba(91,192,235,0.2);border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px">ONLINE PLAYERS</div>
-              <div style="font-family:var(--font-display);font-size:36px;color:#5bc0eb" data-live="online">0</div>
-              <div class="live-badge" style="justify-content:center;margin-top:6px"><div class="live-dot"></div>LIVE</div>
+        <!-- STATS GRID -->
+        <div class="stats-grid">
+          <div class="stat-card gold">
+            <div class="stat-label">Wallet Balance</div>
+            <div class="stat-value" id="dash-wallet">0</div>
+            <div class="stat-sub">Available Coins</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Matches Played</div>
+            <div class="stat-value" id="dash-matches">0</div>
+            <div class="stat-sub">Lifetime games</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value" id="dash-winrate">0%</div>
+            <div class="stat-sub" id="dash-wld">0W / 0L / 0D</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">Best Streak</div>
+            <div class="stat-value" id="dash-streak">0</div>
+            <div class="stat-sub">Current: 0</div>
+          </div>
+        </div>
+
+        <!-- CHALLENGES SECTION (Conditional) -->
+        <div id="dash-challenges-section" class="mb-24" style="display:none">
+          <div class="card" style="border-color:var(--teal); background:rgba(212,175,55,0.05)">
+            <div class="card-title"><i class="fa-solid fa-bolt"></i> Pending Challenges</div>
+            <div id="dash-challenges-list" class="flex" style="flex-wrap:wrap; gap:12px; margin-top:10px">
+              <!-- Dynamically populated -->
             </div>
-            <div style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.2);border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px">ACTIVE MATCHES</div>
-              <div style="font-family:var(--font-display);font-size:36px;color:var(--orange)" data-live="matches">0</div>
-              <div class="live-badge" style="justify-content:center;margin-top:6px;border-color:rgba(255,107,53,0.3);color:var(--orange)"><div class="live-dot" style="background:var(--orange)"></div>PLAYING</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- QUICK ACTIONS -->
+          <div class="card">
+            <div class="card-title">Quick Actions</div>
+            <div class="quick-actions">
+              <a href="/pages/play.html" class="quick-btn primary">
+                <div class="qb-icon"><i class="fa-solid fa-chess-knight"></i></div>
+                <div class="qb-title">Play Chess</div>
+                <div class="qb-sub">Find random opponent</div>
+              </a>
+              <a href="/pages/free-tournament.html" class="quick-btn">
+                <div class="qb-icon"><i class="fa-solid fa-gamepad"></i></div>
+                <div class="qb-title">Free Play</div>
+                <div class="qb-sub">No entry fee</div>
+              </a>
+              <a href="/pages/paid-tournament.html" class="quick-btn">
+                <div class="qb-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div class="qb-title">Pro Tourney</div>
+                <div class="qb-sub">Win real coins</div>
+              </a>
+              <a href="/pages/wallet.html" class="quick-btn">
+                <div class="qb-icon"><i class="fa-solid fa-plus"></i></div>
+                <div class="qb-title">Add Money</div>
+                <div class="qb-sub">Top up via Razorpay</div>
+              </a>
             </div>
-            
-            <div style="margin-top:8px">
-              <div class="flex-between" style="margin-bottom:12px">
-                <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;font-weight:600">ONLINE FRIENDS</div>
-                <a href="/pages/friends.html" style="font-size:11px;color:#5bc0eb;text-decoration:none">View All</a>
+          </div>
+
+          <!-- LIVE RADAR -->
+          <div class="card">
+            <div class="card-title">Live Activity</div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div
+                style="background:rgba(0,0,0,0.2);padding:20px;border-radius:12px;text-align:center;border:1px solid rgba(91,192,235,0.2)">
+                <div
+                  style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+                  Online Players</div>
+                <div style="font-size:36px;font-weight:900;color:#5bc0eb" data-live="online">0</div>
+                <div class="badge badge-live" style="margin-top:8px">
+                  <div class="live-dot"></div> LIVE NOW
+                </div>
               </div>
-              <div id="dash-online-friends" style="display:flex;flex-direction:column;gap:8px">
-                 <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:8px"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div></div>
+              <div
+                style="background:rgba(0,0,0,0.2);padding:20px;border-radius:12px;text-align:center;border:1px solid rgba(255,107,53,0.2)">
+                <div
+                  style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+                  Active Matches</div>
+                <div style="font-size:36px;font-weight:900;color:var(--orange)" data-live="matches">0</div>
+                <div class="badge badge-upcoming" style="margin-top:8px;color:var(--orange);border-color:var(--orange)">
+                  PLAYING</div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <!-- RECENT MATCHES -->
-        <div class="card">
-          <div class="card-title">Recent Matches</div>
-          <div id="recent-matches">
-            <div class="skeleton" style="height:48px;margin-bottom:8px"></div>
-            <div class="skeleton" style="height:48px;margin-bottom:8px"></div>
-            <div class="skeleton" style="height:48px"></div>
-          </div>
-          <a href="/pages/history.html" class="btn btn-secondary btn-full" style="margin-top:14px">View All History</a>
-        </div>
-
-        <!-- LIVE TOURNAMENT -->
-        <div class="card">
-          <div class="card-title">Live Tournaments</div>
-          <div id="live-tournaments">
-            <div class="skeleton" style="height:80px;margin-bottom:10px"></div>
-            <div class="skeleton" style="height:80px"></div>
-          </div>
-          <a href="/pages/free-tournament.html" class="btn btn-secondary btn-full" style="margin-top:14px">View All</a>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<div id="toast-container" class="toast-container"></div>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="/js/api.js?v=2"></script>
-<script src="/js/socket.js?v=2"></script>
-<script>
-if (!requireAuth()) throw new Error('Not authenticated');
-const user = getUser();
+  <div id="toast-container" class="toast-container"></div>
 
-// Load sidebar
-loadSidebar();
+  <!-- GLOBAL CHALLENGE MODAL -->
+  <div class="modal-overlay" id="challenge-modal">
+    <div class="modal">
+      <div class="modal-title"><i class="fa-solid fa-chess-pawn"></i> Challenge Received!</div>
+      <div class="modal-desc" id="challenge-modal-desc">Player wants to challenge you</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="respondGlobalChallenge(false)">Decline</button>
+        <button class="btn btn-primary" onclick="respondGlobalChallenge(true)">Accept</button>
+      </div>
+    </div>
+  </div>
 
-// Topbar
-document.getElementById('tb-player-id').textContent = user.player_id || 'PX-??????';
-document.getElementById('tb-player-id').addEventListener('click', () => {
-  navigator.clipboard.writeText(user.player_id || '').then(() => Toast.info('Player ID copied!'));
-});
-if (user.profile_image) {
-  document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-} else {
-  if (user.profile_image) {
-  document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-} else {
-  document.getElementById('tb-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
-}
-}
+  <!-- SCRIPTS -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/api.js?v=3"></script>
+  <script src="/js/socket.js?v=3"></script>
 
-// Dashboard info
-document.getElementById('dash-username').textContent = user.full_name || fmt.username(user.username);
-if (user.profile_image) {
-  document.getElementById('dash-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-} else {
-  document.getElementById('dash-avatar').textContent = (user.username || 'P').replace('@', '')[0].toUpperCase();
-}
-document.getElementById('dash-iq').textContent = user.iq_level || 100;
+  <script>
+    // Robust Initialization
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        if (!requireAuth()) return;
+        const user = getUser();
+        if (!user) { window.location.href = '/pages/login.html'; return; }
 
-const kycBadgeMap = { verified: '<span class="badge badge-verified"><i class="fa-solid fa-check"></i> Verified</span>', pending: '<span class="badge badge-pending">⏳ KYC Pending</span>', not_verified: '<span class="badge badge-rejected"><i class="fa-solid fa-triangle-exclamation"></i> KYC Required</span>' };
-document.getElementById('dash-kyc-badge').innerHTML = kycBadgeMap[user.kyc_status] || '';
+        // 1. Initial UI setup with local data
+        updateUI(user);
 
-const rankBadgeMap = { Bronze: 'badge-bronze', Silver: 'badge-silver', Gold: 'badge-gold', Platinum: 'badge-platinum' };
-document.getElementById('dash-rank-badge').className = `badge ${rankBadgeMap[user.rank] || 'badge-bronze'}`;
-document.getElementById('dash-rank-badge').textContent = user.rank || 'Bronze';
+        // 2. Load Sidebar
+        await loadSidebar();
+        if (typeof updateSidebarUI === 'function') updateSidebarUI(user);
 
-// Load data
-async function loadDashboard() {
-  const tryLoad = async (promise) => { try { return await promise || { success: false }; } catch (e) { console.warn('API Error:', e); return { success: false }; } };
+        // 3. Sync profile if ID is missing
+        if (!user.player_id) {
+          const res = await UserAPI.getProfile();
+          if (res?.success && res.user.player_id) {
+            setSession(getToken(), getRefreshToken(), res.user);
+            updateUI(res.user);
+          }
+        }
 
-  const walletRes = await tryLoad(WalletAPI.getBalance());
-  const statsRes = await tryLoad(UserAPI.getStats());
-  const historyRes = await tryLoad(GameAPI.getHistory('all', 1));
-  const tournamentsRes = await tryLoad(TournamentAPI.getAll(null, 'live'));
-  const notifRes = await tryLoad(UserAPI.getNotifications());
+        // 4. Fetch live dashboard data
+        loadDashboardData();
 
-  if (walletRes?.success) {
-     document.getElementById('stat-balance').textContent = walletRes.wallet.balance?.toLocaleString() || '0';
-  }
-  
-  if (statsRes?.success) {
-    const s = statsRes.stats;
-    document.getElementById('stat-matches').textContent = s.total_matches || 0;
-    document.getElementById('stat-winrate').textContent = (s.win_rate || 0) + '%';
-    document.getElementById('stat-wins').textContent = s.wins || 0;
-    document.getElementById('stat-losses').textContent = s.losses || 0;
-    document.getElementById('stat-draws').textContent = s.draws || 0;
-    document.getElementById('stat-streak').textContent = s.best_streak || 0;
-    document.getElementById('stat-cur-streak').textContent = s.current_streak || 0;
-  }
+        // 5. Connect Real-time
+        initRealtime(user);
 
-  // Recent matches
-  const matchesEl = document.getElementById('recent-matches');
-  if (historyRes?.success && historyRes.matches?.length) {
-    matchesEl.innerHTML = historyRes.matches.slice(0, 5).map(m => {
-      const isP1 = m.player1_id?.id === user.id;
-      const opponent = isP1 ? m.player2_id : m.player1_id;
-      const won = m.winner_id === user.id;
-      const resultClass = m.result === 'draw' ? 'result-draw' : (won ? 'result-win' : 'result-loss');
-      const resultText = m.result === 'draw' ? '½ Draw' : (won ? '<i class="fa-solid fa-check"></i> Win' : '<i class="fa-solid fa-xmark"></i> Loss');
-      const iqChange = isP1 ? m.iq_change_p1 : m.iq_change_p2;
-      return `<div class="flex-between" style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div class="flex gap-12 align-items-center">
-          <div class="avatar-initial" style="width:32px;height:32px;font-size:13px">${(opponent?.username || '?').replace('@', '')[0].toUpperCase()}</div>
-          <div><div style="font-size:13px;font-weight:500">${fmt.username(opponent?.username || 'Unknown')}</div><div style="font-size:10px;color:var(--text-muted)">${m.match_type} · ${fmt.relTime(m.created_at)}</div></div>
-        </div>
-        <div style="text-align:right">
-          <div class="${resultClass}" style="font-weight:700;font-size:13px">${resultText}</div>
-          <div style="font-size:11px;color:${iqChange >= 0 ? 'var(--success)' : 'var(--error)'}">${iqChange >= 0 ? '+' : ''}${iqChange || 0} IQ</div>
-        </div>
-      </div>`;
-    }).join('');
-  } else {
-    matchesEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No matches yet. Start playing!</div>';
-  }
+        // 6. Hide overlay
+        document.getElementById('sync-overlay').classList.add('hidden');
 
-  // Live tournaments
-  const tourEl = document.getElementById('live-tournaments');
-  if (tournamentsRes?.success && tournamentsRes.tournaments?.length) {
-    tourEl.innerHTML = tournamentsRes.tournaments.slice(0, 3).map(t => `
-      <div class="tournament-card" style="margin-bottom:10px" onclick="window.location='/pages/${t.type}-tournament.html'">
-        <div class="flex-between mb-8">
-          <div>
-            <div style="font-weight:600;font-size:14px">${t.name}</div>
-            <div style="font-size:11px;color:var(--text-muted)">${t.current_players}/${t.max_players} players</div>
-          </div>
-          <div class="flex gap-8">
-            <span class="tournament-card timer-badge">${t.timer_type}min</span>
-            <span class="badge ${t.status === 'live' ? 'badge-live' : 'badge-upcoming'}">${t.status === 'live' ? '<i class="fa-solid fa-circle" style="color:var(--error);"></i> LIVE' : '<i class="fa-solid fa-clock"></i> UPCOMING'}</span>
-          </div>
-        </div>
-        ${t.type === 'paid' ? `<div style="font-family:var(--font-display);font-size:14px;color:var(--gold)"><i class="fa-solid fa-coins"></i> Prize Pool: ${t.prize_pool} coins</div>` : '<div style="font-size:12px;color:#5bc0eb"><i class="fa-solid fa-gamepad"></i> Free Entry</div>'}
-      </div>`).join('');
-  } else {
-    tourEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">No live tournaments right now</div>';
-  }
+      } catch (err) {
+        console.error('Initialization Error:', err);
+        // Even if script fails, show the page
+        document.getElementById('sync-overlay').classList.add('hidden');
+      }
+    });
 
-  // Notifications
-  if (notifRes?.success && notifRes.notifications?.length) {
-    const unread = notifRes.notifications.filter(n => !n.read).length;
-    if (unread > 0) { document.getElementById('notif-count').textContent = unread; document.getElementById('notif-count').style.display = 'flex'; }
-    document.getElementById('notif-list').innerHTML = notifRes.notifications.slice(0, 8).map(n => `
-      <div class="notif-item">
-        <div class="notif-title">${n.title}</div>
-        <div class="notif-msg">${n.message}</div>
-        <div class="notif-time">${fmt.relTime(n.created_at)}</div>
-      </div>`).join('');
-  }
-  // Friends loader
-  if(typeof FriendAPI !== 'undefined') {
-    const friendRes = await FriendAPI.getFriends();
-    const dashFEl = document.getElementById('dash-online-friends');
-    if(dashFEl && friendRes?.success) {
-      const online = friendRes.friends.filter(f => f.is_online);
-      if(!online.length) {
-        dashFEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:11px">None of your friends are online.</div>';
-      } else {
-        dashFEl.innerHTML = online.slice(0, 3).map(f => `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px">
-             <div style="display:flex;align-items:center;gap:8px">
-                <div style="width:24px;height:24px;border-radius:50%;background:#5bc0eb;color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px">${f.username.replace('@','')[0].toUpperCase()}</div>
-                <div style="font-size:12px;font-weight:600">${f.username}</div>
+    function updateUI(user) {
+      document.getElementById('tb-player-id').textContent = user.player_id || 'PX-SYNCING...';
+      document.getElementById('dash-username').textContent = user.full_name || fmt.username(user.username);
+      document.getElementById('dash-iq').textContent = user.iq_level || 100;
+
+      // Avatar
+      const avatarHtml = user.profile_image
+        ? `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        : (user.username || 'P').replace('@', '')[0].toUpperCase();
+      document.getElementById('tb-avatar').innerHTML = avatarHtml;
+      document.getElementById('dash-avatar').innerHTML = avatarHtml;
+
+      // Badges
+      const kycBadgeMap = { verified: '<span class="badge badge-verified"><i class="fa-solid fa-check"></i> Verified</span>', pending: '<span class="badge badge-pending">⏳ KYC Pending</span>', not_verified: '<span class="badge badge-rejected">KYC Required</span>' };
+      document.getElementById('dash-kyc-badge').innerHTML = kycBadgeMap[user.kyc_status] || '';
+
+      const rankBadgeMap = { Bronze: 'badge-bronze', Silver: 'badge-silver', Gold: 'badge-gold', Platinum: 'badge-platinum' };
+      const rBadge = document.getElementById('dash-rank-badge');
+      rBadge.className = `badge ${rankBadgeMap[user.rank] || 'badge-bronze'}`;
+      rBadge.textContent = user.rank || 'Bronze';
+    }
+
+    async function loadDashboardData() {
+      const tryLoad = async (promise) => { try { return await promise || { success: false }; } catch (e) { return { success: false }; } };
+
+      const [walletRes, statsRes, chalRes, notifRes] = await Promise.all([
+        tryLoad(WalletAPI.getBalance()),
+        tryLoad(UserAPI.getStats()),
+        tryLoad(FriendAPI.getChallenges()),
+        tryLoad(UserAPI.getNotifications())
+      ]);
+
+      if (walletRes.success) {
+        const balance = walletRes.wallet.balance;
+        document.getElementById('dash-wallet').textContent = balance.toLocaleString();
+
+        // Sync with sidebar
+        const u = getUser();
+        if (u) {
+          u.coins = balance;
+          localStorage.setItem('px_user', JSON.stringify(u));
+          if (typeof updateSidebarUI === 'function') updateSidebarUI(u);
+        }
+      }
+      if (statsRes.success) {
+        const s = statsRes.stats;
+        document.getElementById('dash-matches').textContent = s.total_matches;
+        document.getElementById('dash-winrate').textContent = s.win_rate + '%';
+        document.getElementById('dash-wld').textContent = `${s.wins}W / ${s.losses}L / ${s.draws}D`;
+        document.getElementById('dash-streak').textContent = s.best_streak;
+      }
+
+      // Render challenges
+      const sec = document.getElementById('dash-challenges-section');
+      const list = document.getElementById('dash-challenges-list');
+      if (chalRes.success && chalRes.challenges.length > 0) {
+        sec.style.display = 'block';
+        list.innerHTML = chalRes.challenges.map(c => `
+        <div style="flex:1; min-width:250px; background:rgba(255,255,255,0.05); padding:12px; border-radius:8px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between">
+           <div class="flex gap-12" style="align-items:center">
+             <div class="avatar-initial" style="width:32px;height:32px;font-size:14px">${c.from_user.username.replace('@', '')[0].toUpperCase()}</div>
+             <div>
+               <div style="font-size:14px; font-weight:700">${c.from_user.username}</div>
+               <div style="font-size:11px; color:var(--text-muted)">${c.timer}m Chess Match</div>
              </div>
-             <button class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:10px" onclick="window.location='/pages/play.html?challenge=${f.friend_id}'">Challenge</button>
+           </div>
+           <div class="flex gap-8">
+             <button class="btn btn-primary btn-sm" onclick="respondGlobalChallengeFromList('${c.id}', true, '${c.from_user_id}', '${c.from_user.username}', ${c.timer})">PLAY</button>
+           </div>
+        </div>
+      `).join('');
+      } else {
+        sec.style.display = 'none';
+      }
+
+      // Render notifications
+      if (notifRes.success) {
+        const nList = document.getElementById('notif-list');
+        const badge = document.getElementById('notif-count');
+        const unread = notifRes.notifications.filter(n => !n.read);
+
+        if (unread.length > 0) {
+          badge.textContent = unread.length;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        if (notifRes.notifications.length === 0) {
+          nList.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">No notifications</div>';
+        } else {
+          const last5 = notifRes.notifications.slice(0, 5);
+          nList.innerHTML = last5.map(n => `
+          <div class="notif-item ${n.read ? '' : 'unread'}" onclick="handleNotifClick(${JSON.stringify(n).replace(/"/g, '&quot;')})">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-msg">${n.message}</div>
+            <div class="notif-time">${fmt.relTime(n.created_at)}</div>
           </div>
         `).join('');
+        }
       }
-    } else if (dashFEl) {
-        dashFEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:11px">Failed to load friends.</div>';
     }
-  }
-}
 
-// Notification dropdown toggle
-document.getElementById('notif-btn').addEventListener('click', async (e) => {
-  e.stopPropagation();
-  const dropdown = document.getElementById('notif-dropdown');
-  const wasOpen = dropdown.classList.contains('open');
-  dropdown.classList.toggle('open');
-  
-  if (!wasOpen) {
-    const badge = document.getElementById('notif-count');
-    if (badge.style.display !== 'none') {
-      badge.style.display = 'none';
-      badge.textContent = '0';
-      UserAPI.markNotificationsRead();
+    function handleNotifClick(n) {
+      if (n.type === 'challenge' || n.title.includes('Challenge')) {
+        window.location.href = '/pages/friends.html';
+      } else if (n.type === 'friend_request' || n.title.includes('Friend')) {
+        window.location.href = '/pages/friends.html';
+      } else if (n.type === 'withdraw' || n.title.includes('Withdrawal')) {
+        window.location.href = '/pages/wallet.html';
+      } else if (n.type === 'kyc' || n.title.includes('KYC')) {
+        window.location.href = '/pages/account.html';
+      }
     }
-  }
-});
-document.addEventListener('click', () => document.getElementById('notif-dropdown').classList.remove('open'));
 
-// Socket Initialization first
-const sock = initSocket();
+    async function respondGlobalChallengeFromList(id, accepted, fromUserId, fromUsername, timer) {
+      if (accepted) {
+        const s = getSocket() || initSocket();
+        s.emit('accept_invite', { fromUserId, toUserId: getUser().id, fromUsername, toUsername: getUser().username, timer });
+        await FriendAPI.respondChallenge(id, 'accepted');
+        window.location.href = '/pages/play.html';
+      }
+    }
 
-// Real-time friend status
-sock.on('friend_status_update', (data) => {
-   // Silently reload just the friends and statistics to update counts
-   loadDashboard();
-});
+    let pendingChallenge = null;
+    function initRealtime(user) {
+      const sock = initSocket();
+      if (!sock) return;
 
-sock.on('silent_notification', () => {
-   const badge = document.getElementById('notif-count');
-   badge.textContent = parseInt(badge.textContent || '0') + 1;
-   badge.style.display = 'flex';
-   loadDashboard(); // Reload notifications list silently
-});
+      sock.on('friend_invite', (data) => {
+        pendingChallenge = data;
+        document.getElementById('challenge-modal-desc').textContent = `${data.fromUsername} challenges you to a ${data.timer}-minute match!`;
+        document.getElementById('challenge-modal').classList.add('active');
+      });
 
-loadDashboard();
+      sock.on('silent_notification', () => {
+        loadDashboardData(); // Full refresh for live updates
+      });
+    }
 
-// ─── WELCOME OVERLAY LOGIC ─────────────────────────────
-function triggerWelcomeOverlay() {
-  if (sessionStorage.getItem('px_just_logged_in') === 'true') {
-    sessionStorage.removeItem('px_just_logged_in');
-    const overlay = document.getElementById('welcome-overlay');
-    const userImg = user.profile_image ? `<img src="${user.profile_image}" class="welcome-avatar">` : 
-                    `<div class="welcome-avatar" style="background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:40px;color:#000;font-weight:900">${(user.username || 'P').replace('@', '')[0].toUpperCase()}</div>`;
-    
-    document.getElementById('welcome-avatar-container').innerHTML = userImg;
-    document.getElementById('welcome-username-text').textContent = user.full_name || fmt.username(user.username);
-    
-    overlay.style.display = 'flex';
-    setTimeout(() => overlay.classList.add('active'), 50);
+    function respondGlobalChallenge(accepted) {
+      document.getElementById('challenge-modal').classList.remove('active');
+      if (accepted && pendingChallenge) {
+        const s = getSocket() || initSocket();
+        s.emit('accept_invite', {
+          fromUserId: pendingChallenge.fromUserId,
+          toUserId: getUser().id,
+          fromUsername: pendingChallenge.fromUsername,
+          toUsername: getUser().username,
+          timer: pendingChallenge.timer
+        });
+        window.location.href = '/pages/play.html';
+      }
+      pendingChallenge = null;
+    }
 
-    setTimeout(() => {
-      overlay.classList.remove('active');
-      setTimeout(() => overlay.style.display = 'none', 600);
-    }, 3000);
-  }
-}
+    // Notif dropdown toggle
+    document.getElementById('notif-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const dropdown = document.getElementById('notif-dropdown');
+      const wasOpen = dropdown.classList.contains('open');
+      dropdown.classList.toggle('open');
 
-// Check for welcome trigger after a short delay to ensure assets are ready
-setTimeout(triggerWelcomeOverlay, 500);
-</script>
+      if (!wasOpen) {
+        const badge = document.getElementById('notif-count');
+        if (badge.style.display !== 'none') {
+          badge.style.display = 'none';
+          badge.textContent = '0';
+          await UserAPI.markNotificationsRead();
+          // Option: keep unread visual style until next reload or refresh just the list
+        }
+      }
+    });
+    document.addEventListener('click', () => {
+      const dd = document.getElementById('notif-dropdown');
+      if (dd) dd.classList.remove('open');
+    });
+  </script>
+
 </body>
+
 </html>

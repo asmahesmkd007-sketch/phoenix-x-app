@@ -21,7 +21,21 @@
           <div class="topbar-avatar" id="tb-avatar" onclick="window.location='/pages/account.html'" style="cursor:pointer">P</div>
         </div>
       </div>
-      <div class="page-content">
+      <div id="toast-container" class="toast-container"></div>
+
+<!-- GLOBAL CHALLENGE MODAL -->
+<div class="modal-overlay" id="challenge-modal">
+  <div class="modal">
+    <div class="modal-title"><i class="fa-solid fa-chess-pawn"></i> Challenge Received!</div>
+    <div class="modal-desc" id="challenge-modal-desc">Player wants to challenge you</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="respondGlobalChallenge(false)">Decline</button>
+      <button class="btn btn-primary" onclick="respondGlobalChallenge(true)">Accept</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-content">
         <!-- KYC Warning -->
         <div id="kyc-warning"
           style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
@@ -208,11 +222,41 @@
   </div>
 
   <div id="toast-container" class="toast-container"></div>
-  <script src="/js/api.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/api.js?v=3"></script>
+  <script src="/js/socket.js?v=3"></script>
   <script>
     if (!requireAuth()) throw new Error();
     const user = getUser();
     loadSidebar();
+
+    let pendingChallenge = null;
+    const sock = initSocket();
+    if (sock) {
+      sock.on('friend_invite', (data) => {
+        pendingChallenge = data;
+        document.getElementById('challenge-modal-desc').textContent = `${data.fromUsername} challenges you to a ${data.timer}-minute match!`;
+        document.getElementById('challenge-modal').classList.add('active');
+      });
+      sock.on('silent_notification', () => { if(typeof loadWallet === 'function') loadWallet(); });
+    }
+
+    function respondGlobalChallenge(accepted) {
+      document.getElementById('challenge-modal').classList.remove('active');
+      if (accepted && pendingChallenge) {
+        const s = getSocket() || initSocket();
+        s.emit('accept_invite', {
+          fromUserId: pendingChallenge.fromUserId,
+          toUserId: user.id,
+          fromUsername: pendingChallenge.fromUsername,
+          toUsername: user.username,
+          timer: pendingChallenge.timer
+        });
+        window.location.href = '/pages/play.html';
+      }
+      pendingChallenge = null;
+    }
+
     document.getElementById('tb-pid').textContent = user.player_id;
     if (user.profile_image) {
   document.getElementById('tb-avatar').innerHTML = `<img src="${user.profile_image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
@@ -294,6 +338,7 @@
       // localStorage also update பண்ணு
       const updatedUser = { ...user, kyc_status: kyc };
       localStorage.setItem('px_user', JSON.stringify(updatedUser));
+      if (typeof updateSidebarUI === 'function') updateSidebarUI(res.user);
     }
 
     async function loadWallet() {
@@ -304,7 +349,17 @@
         document.getElementById('wallet-inr').textContent = currentBalance.toLocaleString();
         document.getElementById('stat-deposited').textContent = walletRes.wallet.total_deposited?.toLocaleString() || '0';
         document.getElementById('stat-withdrawn').textContent = walletRes.wallet.total_withdrawn?.toLocaleString() || '0';
+        document.getElementById('stat-won').textContent = walletRes.wallet.total_won?.toLocaleString() || '0';
+        document.getElementById('stat-spent').textContent = walletRes.wallet.total_spent?.toLocaleString() || '0';
         document.getElementById('wd-available').textContent = currentBalance;
+
+        // Sync with sidebar
+        const u = getUser();
+        if(u) {
+          u.coins = currentBalance;
+          localStorage.setItem('px_user', JSON.stringify(u));
+          if (typeof updateSidebarUI === 'function') updateSidebarUI(u);
+        }
       }
       if (txnRes?.success) renderTransactions(txnRes.transactions);
 
@@ -313,6 +368,7 @@
       if(profRes?.success) {
         payoutDetails = profRes.user.payout_details;
         renderPayoutStatus();
+        if (typeof updateSidebarUI === 'function') updateSidebarUI(profRes.user);
       }
     }
 
