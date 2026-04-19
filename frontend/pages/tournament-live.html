@@ -329,6 +329,8 @@
     }
 
     function setupPaidTournamentLobby() {
+      sock.emit('join_tournament', { tournamentId });
+
       // Recover match on refresh 
       const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
       if (storedMatch) {

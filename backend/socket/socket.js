@@ -26,6 +26,7 @@ const banLocks = new Set(); // Prevents anti-cheat double-confiscation race cond
 let onlineCount = 0;
 
 module.exports = (io) => {
+  TournamentManager.init(io);
 
   // Expose for updates
   io.on('connection', (socket) => {
@@ -100,6 +101,10 @@ module.exports = (io) => {
     });
 
     // ─── TOURNAMENT MGR EVENTS ──────────────────────────────
+    socket.on('join_tournament', ({ tournamentId }) => {
+        socket.join(`tournament_${tournamentId}`);
+    });
+
     socket.on('rejoin_tr_match', ({ matchId, userId }) => {
         TournamentManager.rejoinMatch(socket, matchId, userId);
     });
