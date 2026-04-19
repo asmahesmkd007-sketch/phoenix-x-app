@@ -107,12 +107,12 @@ const { autoCreateFreeTournaments, autoCreatePaidTournaments, updateTournamentSt
 setInterval(updateTournamentStatuses, 30 * 1000);
 
 // Run the Paid tournament auto-creation scheduler every minute
-setInterval(autoCreatePaidTournaments, 60 * 1000);
+// setInterval(autoCreatePaidTournaments, 60 * 1000);
 
 // Create initial batch of tournaments on startup (if none exist)
 setTimeout(() => {
   autoCreateFreeTournaments();
-  autoCreatePaidTournaments();
+  // autoCreatePaidTournaments();
 }, 3000);
 
 // ─── STATIC FILES ──────────────────────────────────────────
