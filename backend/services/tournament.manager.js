@@ -73,7 +73,7 @@ class TournamentManager {
         if (tState.status === 'full') {
             tState.countdown = 2 * 60; // 2 min to LIVE
         } else if (tState.status === 'live') {
-            tState.countdown = 2 * 60; // 2 min to STARTING (as requested)
+            tState.countdown = 5 * 60; // 5 min to STARTING (as per master spec)
         }
 
         // If it's already playing, recover matches from DB
@@ -150,8 +150,8 @@ class TournamentManager {
 
     static async transitionToLive(tState) {
         tState.status = 'live';
-        tState.countdown = 2 * 60;
-        const liveStartTime = new Date(Date.now() + 2 * 60000).toISOString();
+        tState.countdown = 5 * 60; // 5 min to STARTING
+        const liveStartTime = new Date(Date.now() + 5 * 60000).toISOString();
         await supabase.from('tournaments').update({ status: 'live', start_time: liveStartTime }).eq('id', tState.id);
         this.io.to(`tournament_${tState.id}`).emit('tournament_msg', { message: 'Tournament LIVE – Get Ready!' });
         this.broadcastState(tState.id);
@@ -227,7 +227,7 @@ class TournamentManager {
         const advanced = [];
         const eliminated = [];
 
-        tState.matches.forEach(m => {
+        tState.matches.forEach(async m => {
             const winnerId = m.winnerId || (Math.random() > 0.5 ? m.player1.userId : m.player2.userId);
             const loserId = m.player1.userId === winnerId ? m.player2.userId : m.player1.userId;
             
@@ -237,6 +237,8 @@ class TournamentManager {
             if (winner) {
                 winner.score = (winner.score || 0) + 1;
                 advanced.push(winner);
+                // Persist score
+                await supabase.from('tournament_players').update({ score: winner.score }).eq('tournament_id', tState.id).eq('user_id', winnerId);
             }
             if (loser) {
                 loser.status = 'eliminated';

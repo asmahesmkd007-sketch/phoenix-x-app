@@ -277,6 +277,14 @@ const distributeTournamentPrizes = async (tournament) => {
                     title: `Tournament Prize! 🏆`,
                     message: `Congratulations! You won ${amount} coins for Rank ${i+1} in ${tournament.name}.`
                 });
+
+                // Audit in leaderboard table
+                await supabase.from('leaderboard').insert({
+                    tournament_id: tournament.id,
+                    user_id: player.user_id,
+                    rank: i + 1,
+                    prize: amount
+                });
             }
         }
     }
