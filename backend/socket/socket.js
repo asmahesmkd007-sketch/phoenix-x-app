@@ -34,9 +34,10 @@ module.exports = (io) => {
 
     // ─── TOURNAMENT SYNC ──────────────────────────────────
     socket.on('join_tournament', ({ tournamentId }) => {
-        socket.join(`tournament_${tournamentId}`);
-        TournamentManager.broadcastState(tournamentId);
-        console.log(`Socket ${socket.id} joined tournament room: ${tournamentId}`);
+        const tIdStr = String(tournamentId);
+        socket.join(`tournament_${tIdStr}`);
+        TournamentManager.broadcastState(tIdStr);
+        console.log(`Socket ${socket.id} joined tournament room: ${tIdStr}`);
     });
 
     // ─── AUTHENTICATE ───────────────────────────────────────
