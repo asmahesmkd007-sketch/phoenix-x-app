@@ -160,13 +160,16 @@ class TournamentManager {
     }
 
     static async setupMatch(p1, p2, tState) {
-        const { data: dbMatch } = await supabase.from('matches').insert({
+        const { data: dbMatch, error: dbErr } = await supabase.from('matches').insert({
             player1_id: p1.user_id, player2_id: p2.user_id,
             match_type: 'tournament', timer_type: tState.timer,
             tournament_id: tState.id, status: 'active'
         }).select().single();
 
-        if (!dbMatch) return;
+        if (dbErr || !dbMatch) {
+            console.error(`❌ Match Creation Failed for ${p1.username} vs ${p2.username}:`, dbErr);
+            return;
+        }
 
         const matchId = dbMatch.id;
         const roomId = 'tr_' + matchId;
