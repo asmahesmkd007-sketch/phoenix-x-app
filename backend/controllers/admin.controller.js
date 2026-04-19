@@ -13,7 +13,7 @@ const getDashboard = async (req, res) => {
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_online', true),
       supabase.from('matches').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('kyc').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('kyc_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('withdraw_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('wallets').select('balance, total_deposited, total_withdrawn'),
     ]);
