@@ -95,7 +95,7 @@ require(path.join(__dirname, './socket/socket'))(io);
 
 // ─── TOURNAMENT MANAGER ────────────────────────────────────
 const TournamentManager = require('./services/tournament.manager');
-TournamentManager.init(io);
+// TournamentManager is already initialized inside socket/socket.js
 
 // ─── STATIC FRONTEND ─────────────────────────────────────
 app.use(express.static(path.join(__dirname, '../frontend')));
