@@ -88,6 +88,10 @@ const joinTournament = async (req, res) => {
 
     await supabase.from('tournaments').update(updateData).eq('id', req.params.id);
 
+    // Manually trigger the manager to wake up immediately
+    const TournamentManager = require('../services/tournament.manager');
+    TournamentManager.pollLiveTournaments().catch(()=>{});
+
     res.json({ success: true, message: 'Joined successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });

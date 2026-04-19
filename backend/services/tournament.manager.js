@@ -26,7 +26,11 @@ class TournamentManager {
             if (!liveTourneys) return;
 
             for (const t of liveTourneys) {
-                if (!activeTourneys.has(t.id)) {
+                // Force pickup if not in manager or if it was stuck in a completed/empty state
+                const isStuck = activeTourneys.has(t.id) && activeTourneys.get(t.id).players.length === 0;
+                
+                if (!activeTourneys.has(t.id) || isStuck) {
+                    if (isStuck) activeTourneys.delete(t.id);
                     console.log(`🔍 Picked up TR-${t.tr_id || t.id}. Fetching players...`);
                     
                     let { data: players } = await supabase.from('tournament_players')
