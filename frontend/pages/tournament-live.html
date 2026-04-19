@@ -406,11 +406,13 @@
         }
       });
 
-      sock.on('match_found_tr', (data) => {
-        console.log('Match Found TR:', data);
+      sock.on('match_start', (data) => {
+        console.log('[DEBUG] MATCH STARTED event received:', data);
         matchId = data.matchId;
         localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
-        setupGame(data.color, data.opponent);
+        
+        // Redirect to game page as per task requirement
+        window.location.href = `/pages/game.html?matchId=${matchId}&tr=1&tId=${tournamentId}`;
       });
 
       sock.on('match_rejoined', (data) => {

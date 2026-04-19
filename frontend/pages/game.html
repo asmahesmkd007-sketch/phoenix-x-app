@@ -158,13 +158,18 @@ const user = getUser();
 loadSidebar();
 
 const params = new URLSearchParams(window.location.search);
+const matchId = params.get('matchId') || localStorage.getItem('px_active_match');
+const isTournament = params.get('tr') === '1';
+const tId = params.get('tId');
+
+if (matchId) localStorage.setItem('px_active_match', matchId);
+
 const matchData = JSON.parse(localStorage.getItem('px_match') || '{}');
-const matchId = params.get('matchId') || matchData.matchId;
 const mode = params.get('mode') || matchData.mode || 'random';
-const myColor = mode === 'bot' ? (localStorage.getItem('px_bot_color') || 'white') : (matchData.color || 'white');
+let myColor = 'white'; 
 const opponentData = matchData.opponent || {};
 const botIQ = parseInt(params.get('iq') || localStorage.getItem('px_bot_iq') || '100');
-const timerType = matchData.timer || 5;
+let timerType = matchData.timer || 1;
 
 let chess = new Chess();
 let board = null;
@@ -313,6 +318,7 @@ if (mode === 'bot') {
 
 // Init board
 function initBoard() {
+  console.log('[DEBUG] BOARD INIT: Setting up chessboard.js');
   board = Chessboard('board', {
     draggable: true,
     moveSpeed: 'slow',
@@ -326,6 +332,7 @@ function initBoard() {
     onSnapEnd: onSnapEnd,
     onMoveEnd: updateLastMoveHighlight
   });
+  console.log('[DEBUG] BOARD INIT: Board rendered successfully');
 }
 
 function onDragStart(source, piece) {
@@ -729,6 +736,12 @@ function triggerBotResponse(userMsg) {
 
 // Socket listeners
 const sock = initSocket();
+
+// [DEBUG] JOINING ROOM
+if (matchId) {
+    console.log('[DEBUG] JOINING ROOM: match_' + matchId);
+    sock.emit('join_match', { matchId, userId: user.id, isTournament });
+}
 
 sock.on('match_sync', (data) => {
   if (data.pgn) {

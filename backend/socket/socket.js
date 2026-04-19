@@ -102,7 +102,21 @@ module.exports = (io) => {
 
     // ─── TOURNAMENT MGR EVENTS ──────────────────────────────
     socket.on('join_tournament', ({ tournamentId }) => {
-        socket.join(`tournament_${tournamentId}`);
+      socket.join(`tournament_${tournamentId}`);
+      console.log(`[DEBUG] SOCKET joined tournament room: tournament_${tournamentId}`);
+    });
+
+    socket.on('join_match', ({ matchId, userId, isTournament }) => {
+      const roomId = `match_${matchId}`;
+      socket.join(roomId);
+      console.log(`[DEBUG] SOCKET joined match room: ${roomId} (User: ${userId})`);
+
+      if (isTournament) {
+        TournamentManager.rejoinMatch(socket, matchId, userId);
+      } else {
+        // Regular match logic
+        socket.emit('match_sync', { status: 'connected' });
+      }
     });
 
     socket.on('rejoin_tr_match', ({ matchId, userId }) => {

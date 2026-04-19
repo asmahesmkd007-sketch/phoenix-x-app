@@ -295,47 +295,65 @@ class TournamentManager {
             return;
         }
 
-        const matchId = dbMatch.id;
-        const roomId = 'tr_' + matchId;
+        const matchId = `tr_${tState.id}_${p1.user_id.slice(0, 4)}_${p2.user_id.slice(0, 4)}`;
+        const roomId = `match_${matchId}`;
+        const sid1 = this.userToSocket.get(p1.user_id);
+        const sid2 = this.userToSocket.get(p2.user_id);
         
         const match = {
             id: matchId,
-            tournamentId: tState.id,
             roomId,
-            status: 'playing',
+            round: tState.round,
             chess: new Chess(),
             turn: 'w',
-            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: p1.socketId }, // white
-            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: p2.socketId }, // black
+            player1: { userId: p1.user_id, username: p1.username, time: tState.timer * 60, socketId: sid1 },
+            player2: { userId: p2.user_id, username: p2.username, time: tState.timer * 60, socketId: sid2 },
+            status: 'playing',
             winnerId: null
         };
-        
-        activeTournamentMatches.set(matchId, match);
+
         tState.matches.push(match);
+        activeTournamentMatches.set(matchId, match);
 
-        // Get current live sockets from the main socket registry
-        const sid1 = this.userToSocket.get(p1.user_id);
-        const sid2 = this.userToSocket.get(p2.user_id);
+        // [LOG] MATCH STARTED
+        console.log(`[DEBUG] MATCH STARTED: ${matchId} | ${p1.username} vs ${p2.username}`);
 
-        if (sid1) { 
+        if (sid1) {
             const s1 = this.io.sockets.sockets.get(sid1);
-            if (s1) { s1.join(roomId); s1.join(`tournament_${tState.id}`); }
+            if (s1) { 
+                s1.join(roomId); 
+                s1.join(`tournament_${tState.id}`);
+                console.log(`[DEBUG] PLAYER JOINED ROOM: ${p1.username} -> ${roomId}`);
+            }
         }
         if (sid2) {
             const s2 = this.io.sockets.sockets.get(sid2);
-            if (s2) { s2.join(roomId); s2.join(`tournament_${tState.id}`); }
+            if (s2) { 
+                s2.join(roomId); 
+                s2.join(`tournament_${tState.id}`);
+                console.log(`[DEBUG] PLAYER JOINED ROOM: ${p2.username} -> ${roomId}`);
+            }
         }
 
-        console.log(`[TR-${tState.id}] Match created: ${p1.username} vs ${p2.username}. Sockets: ${sid1}, ${sid2}`);
+        // [LOG] ROOM USERS COUNT
+        const room = this.io.sockets.adapter.rooms.get(roomId);
+        console.log(`[DEBUG] ROOM USERS COUNT for ${roomId}: ${room ? room.size : 0}`);
 
-        const eventData = { matchId, roomId, duration: tState.timer * 60, round: tState.round };
+        const eventData = { 
+            matchId, 
+            roomId, 
+            duration: tState.timer * 60, 
+            round: tState.round,
+            player1: { userId: p1.user_id, username: p1.username },
+            player2: { userId: p2.user_id, username: p2.username }
+        };
+
+        // Emit match_start as requested
         if (sid1) {
-            this.io.to(sid1).emit('match_found_tr', { ...eventData, color: 'white', opponent: p2 });
-            console.log(` -> Emitted match_found_tr to ${p1.username} (${sid1})`);
+            this.io.to(sid1).emit('match_start', { ...eventData, color: 'white', opponent: p2 });
         }
         if (sid2) {
-            this.io.to(sid2).emit('match_found_tr', { ...eventData, color: 'black', opponent: p1 });
-            console.log(` -> Emitted match_found_tr to ${p2.username} (${sid2})`);
+            this.io.to(sid2).emit('match_start', { ...eventData, color: 'black', opponent: p1 });
         }
     }
 
@@ -495,22 +513,24 @@ class TournamentManager {
 
     static rejoinMatch(socket, matchId, userId) {
         const match = activeTournamentMatches.get(matchId);
-        if (!match) return false;
-        
-        if (match.player1.userId === userId) { match.player1.socketId = socket.id; socket.join(match.roomId); }
-        else if (match.player2.userId === userId) { match.player2.socketId = socket.id; socket.join(match.roomId); }
-        else return false;
+        if (!match) return;
 
-        socket.emit('match_rejoined', { 
-            roomId: match.roomId,
-            fen: match.chess.fen(), 
-            turn: match.turn,
+        const roomId = `match_${matchId}`;
+        socket.join(roomId);
+
+        // Send current state
+        const isWhite = match.player1.userId === userId;
+        socket.emit('match_sync', {
+            matchId: match.id,
+            fen: match.chess.fen(),
+            color: isWhite ? 'white' : 'black',
+            opponent: isWhite ? match.player2 : match.player1,
             white_time: match.player1.time,
             black_time: match.player2.time,
-            color: match.player1.userId === userId ? 'white' : 'black',
-            opponent: match.player1.userId === userId ? match.player2 : match.player1
+            status: match.status
         });
-        return true;
+        
+        console.log(`[DEBUG] REJOINED: User ${userId} recovered match ${matchId}`);
     }
 }
 
