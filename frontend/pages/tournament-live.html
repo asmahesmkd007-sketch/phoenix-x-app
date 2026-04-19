@@ -183,55 +183,46 @@
           <!-- MAIN GAME AREA -->
           <div class="game-panel">
 
-            <!-- LOBBY / SEARCH OVERLAY -->
-            <div class="status-overlay" id="lobby-status">
-              <div id="status-icon" style="font-size: 60px; margin-bottom: 20px;"><i class="fa-solid fa-gamepad"></i>
+            <!-- ACTIVE GAME UI (Always Visible now) -->
+            <div id="game-arena" style="width:100%; max-width:500px; display:flex; flex-direction:column; align-items:center; position:relative;">
+              
+              <!-- LOBBY / SEARCH OVERLAY (Now a floating banner) -->
+              <div class="status-overlay" id="lobby-status" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
+                <div id="status-icon" style="font-size: 40px; margin-bottom: 10px;"><i class="fa-solid fa-gamepad"></i></div>
+                <h2 id="status-title" style="margin-bottom: 4px; font-size: 18px;">Entering Arena...</h2>
+                <div id="status-desc" style="color: var(--text-secondary); max-width: 260px; margin-bottom: 15px; font-size: 13px;">Please wait while we set up your match.</div>
+                <div class="spinner" id="search-spinner" style="display:none; width:25px; height:25px; border-width: 3px; margin: 0 auto; margin-bottom:15px;"></div>
+                <button class="btn btn-primary btn-sm" id="action-btn" style="display:none;">Find Match</button>
               </div>
-              <h2 id="status-title" style="margin-bottom: 8px;">Entering Arena...</h2>
-              <div id="status-desc" style="color: var(--text-secondary); max-width: 300px; margin-bottom: 24px;">Please
-                wait while we set up your match.</div>
-              <div class="spinner" id="search-spinner"
-                style="display:none; width:30px; height:30px; border-width: 3px; margin: 0 auto; margin-bottom:20px;">
-              </div>
-              <button class="btn btn-primary btn-lg" id="action-btn" style="display:none;">Find Match</button>
-            </div>
 
-            <!-- ACTIVE GAME UI -->
-            <div id="game-ui"
-              style="display:none; width:100%; max-width:500px; flex-direction:column; align-items:center;">
-              <div class="player-bar" id="opponent-bar">
+              <div class="player-bar" id="opponent-bar" style="opacity: 0.5;">
                 <div class="avatar-initial" id="opp-avatar">?</div>
                 <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="font-weight:600" id="opp-name">Opponent</div>
-                    <div style="font-size:11px;color:var(--text-muted)" id="opp-rating">Searching...</div>
+                    <div style="font-size:11px;color:var(--text-muted)" id="opp-rating">Waiting...</div>
                   </div>
-                  <div id="opp-captured"
-                    style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px">
-                  </div>
+                  <div id="opp-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
                 </div>
-                <div class="player-timer" id="opp-timer">-:--</div>
+                <div class="player-timer" id="opp-timer">0:00</div>
               </div>
 
-              <!-- Chess Board -->
+              <!-- Chess Board (Always Visible) -->
               <div id="board"></div>
 
-              <div class="player-bar" id="my-bar">
+              <div class="player-bar" id="my-bar" style="opacity: 0.5;">
                 <div class="avatar-initial" id="my-avatar">P</div>
                 <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="font-weight:600" id="my-name">You</div>
                     <div style="font-size:11px;color:var(--text-muted)" id="my-score">Points: 0</div>
                   </div>
-                  <div id="my-captured"
-                    style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px">
-                  </div>
+                  <div id="my-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
                 </div>
-                <div class="player-timer" id="my-timer">-:--</div>
+                <div class="player-timer" id="my-timer">0:00</div>
               </div>
 
-              <button class="btn btn-danger btn-sm" style="margin-top:20px; align-self:flex-start;"
-                onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign Match</button>
+              <button class="btn btn-danger btn-sm" id="resign-btn" style="margin-top:20px; align-self:flex-start; display:none;" onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign Match</button>
             </div>
           </div>
         </div>
@@ -288,6 +279,14 @@
       if (!res?.success) return window.location.href = '/pages/free-tournament.html';
 
       sock.emit('join_tournament', { tournamentId });
+
+      // Initialize Empty Board immediately
+      if (!board) {
+        board = Chessboard('board', {
+          position: 'start',
+          pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        });
+      }
 
       tournamentConfig = res.tournament;
       document.getElementById('tournament-name').textContent = tournamentConfig.name.toUpperCase();
@@ -418,7 +417,6 @@
     }
 
     function showLobby(title, desc, showSearch = false, showBtn = false, btnText = 'Find Match', btnAction = startSearching) {
-      document.getElementById('game-ui').style.display = 'none';
       const overlay = document.getElementById('lobby-status');
       overlay.classList.remove('hidden');
       document.getElementById('status-title').textContent = title;
@@ -452,7 +450,9 @@
       document.getElementById('opp-rating').textContent = 'Live Knockout Match';
 
       document.getElementById('lobby-status').classList.add('hidden');
-      document.getElementById('game-ui').style.display = 'flex';
+      document.getElementById('my-bar').style.opacity = '1';
+      document.getElementById('opponent-bar').style.opacity = '1';
+      document.getElementById('resign-btn').style.display = 'inline-flex';
 
       if (!board) {
         board = Chessboard('board', {
@@ -467,6 +467,7 @@
       } else {
         board.orientation(myColor);
         board.position(chess.fen());
+        board.start(); // Ensure it's active
       }
 
       startMatchTimer();
