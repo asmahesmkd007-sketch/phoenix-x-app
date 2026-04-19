@@ -78,26 +78,16 @@
 
           <!-- Filters -->
           <div class="flex" style="gap:12px; flex-wrap:wrap;">
-            <select id="filter-min" class="input"
-              style="padding:8px 12px; width:auto; border-radius:8px; cursor:pointer;" onchange="renderTournaments()">
-              <option value="all">Timer (All)</option>
-              <option value="1">1 Min</option>
-              <option value="3">3 Min</option>
-              <option value="5">5 Min</option>
-            </select>
-            <select id="filter-entry" class="input"
-              style="padding:8px 12px; width:auto; border-radius:8px; cursor:pointer;" onchange="renderTournaments()">
-              <option value="all">Entry (All)</option>
+            <select class="input" style="max-width:150px" id="filter-entry" onchange="renderTournaments()">
+              <option value="all">Entry: All</option>
               <option value="5">5 Coins</option>
               <option value="10">10 Coins</option>
               <option value="15">15 Coins</option>
               <option value="20">20 Coins</option>
               <option value="30">30 Coins</option>
               <option value="50">50 Coins</option>
-              <option value="80">80 Coins</option>
               <option value="100">100 Coins</option>
               <option value="200">200 Coins</option>
-              <option value="300">300 Coins</option>
               <option value="500">500 Coins</option>
             </select>
           </div>
@@ -287,50 +277,25 @@
         return;
       }
 
-      const filterMin = document.getElementById('filter-min').value;
       const filterEntry = document.getElementById('filter-entry').value;
 
       let filteredList = allTournaments.filter(t => {
-        let matchesMin = filterMin === 'all' || t.timer_type === parseInt(filterMin);
         let matchesEntry = filterEntry === 'all' || t.entry_fee === parseInt(filterEntry);
-        return matchesMin && matchesEntry;
+        return matchesEntry;
       });
 
-      const grouped = { 1: [], 3: [], 5: [], 10: [] };
-      filteredList.forEach(t => { if (grouped[t.timer_type]) grouped[t.timer_type].push(t); });
-
-      let html = '';
-      const isDefaultView = filterMin === 'all' && filterEntry === 'all';
-      let hasResults = false;
-
-      for (const timer of [1, 3, 5, 10]) {
-        let list = grouped[timer];
-        if (!list.length) continue;
-
-        hasResults = true;
-        if (isDefaultView) {
-          list = list.slice(0, 4); 
-        }
-
-        html += `<div style="margin-bottom:32px;">
-       <h3 style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-         <span style="background:var(--primary); color:white; padding:4px 10px; border-radius:6px; font-size:14px;">${timer} Min</span>
-         <span style="font-size:14px; font-weight:400; color:var(--text-muted);">Tournaments</span>
-       </h3>
-       <div class="grid-auto">
-         ${list.map(t => createCardHTML(t)).join('')}
-       </div>
-     </div>`;
-      }
-
-      if (!hasResults) {
+      if (filteredList.length === 0) {
         displayArea.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)">
           <div style="font-size:40px;margin-bottom:12px"><i class="fa-solid fa-filter"></i></div>
           <div style="font-weight:600">No matching tournaments found</div>
           <div style="font-size:12px;margin-top:6px">Try changing your filters</div>
         </div>`;
       } else {
-        displayArea.innerHTML = html;
+        displayArea.innerHTML = `
+          <div class="grid-auto">
+            ${filteredList.map(t => createCardHTML(t)).join('')}
+          </div>
+        `;
       }
     }
 
