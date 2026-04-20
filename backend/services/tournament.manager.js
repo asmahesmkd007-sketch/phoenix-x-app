@@ -10,6 +10,15 @@ class TournamentManager {
         this.io = io;
         setInterval(() => this.tick(), 1000);
         setInterval(() => this.pollLiveTournaments(), 5000);
+        
+        // FAIL-SAFE: Check for replenishment every 3 minutes
+        setInterval(() => {
+            const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+            autoCreatePaidTournaments().catch(()=>{});
+        }, 3 * 60 * 1000);
+
+        // RECOVERY: Recover any stuck tournaments from previous session
+        this.recoverStuckTournaments().catch(err => console.error('Recovery Error:', err));
     }
 
     static async pollLiveTournaments() {
@@ -29,9 +38,6 @@ class TournamentManager {
                             current_players: 16,
                             start_time: new Date(Date.now() + 120000).toISOString() 
                         }).eq('id', ut.id);
-                        
-                        const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
-                        autoCreatePaidTournaments().catch(()=>{});
 
                         this.pickupTournament(ut.id).catch(()=>{});
                     }
@@ -72,18 +78,27 @@ class TournamentManager {
     }
 
     static startTournament(tournamentId, playersData, tData) {
-        const countdown = tData.start_time
-            ? Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000))
-            : 120;
+        let countdown = 120;
+        
+        if (tData.status === 'live' && tData.live_lobby_ends_at) {
+            // Recovery: Calculate remaining time from DB timestamp
+            const endsAt = new Date(tData.live_lobby_ends_at);
+            countdown = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+        } else if (tData.start_time) {
+            countdown = Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000));
+        }
+
         const tState = {
             id: tournamentId, tr_id: tData.tr_id,
             players: [...playersData], allPlayers: [...playersData],
             max: tData.max_players, timer: tData.timer_type,
-            status: 'full', countdown,
-            round: 0, matches: [], prize_pool: tData.prize_pool || 0
+            status: tData.status || 'full', 
+            countdown,
+            round: 0, matches: [],
+            nextRoundPending: false,  // FIX: Guard against duplicate nextRound calls
+            prize_pool: tData.prize_pool || 0
         };
         activeTourneys.set(tournamentId, tState);
-        supabase.from('tournaments').update({ status: 'full', phase: 'full' }).eq('id', tournamentId).then(() => {});
     }
 
     static tick() {
@@ -94,16 +109,7 @@ class TournamentManager {
                 this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
 
                 if (tState.countdown <= 0) {
-                    tState.status = 'live';
-                    tState.countdown = 120; // 2 min Live Lobby Wait
-                    supabase.from('tournaments').update({ status: 'live', phase: 'lobby' }).eq('id', tId).then(() => {});
-                    
-                    // TRIGGER NEXT TR NOW
-                    const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
-                    autoCreatePaidTournaments().catch(() => {});
-                    
-                    console.log(`📡 TR-${tState.tr_id} is now LIVE. Next TR triggered. Lobby wait: 120s.`);
-                    this.broadcastState(tId);
+                    this.transitionToLive(tId).catch(err => console.error('Transition Error:', err));
                 } else if (tState.countdown % 10 === 0) {
                     this.broadcastState(tId);
                 }
@@ -119,13 +125,20 @@ class TournamentManager {
             // LIVE → check all matches done
             else if (tState.status === 'live') {
                 // LIVE LOBBY WAIT (before Round 1 matches are created)
-                if (tState.matches.length === 0) {
+                if (tState.matches.length === 0 && !tState.nextRoundPending) {
                     tState.countdown--;
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
-                    
+
                     if (tState.countdown <= 0) {
-                        console.log(`🎮 TR-${tState.tr_id} starting matches (Round 1)`);
-                        this.nextRound(tState);
+                        tState.nextRoundPending = true; // FIX: prevent re-entry
+                        console.log(`🎮 TR-${tState.tr_id} starting matches (Round ${tState.round + 1})`);
+                        this.nextRound(tState).finally(() => {
+                            // FIX: Only clear flag if matches were actually created;
+                            // if still empty (all auto-wins), keep pending so we don't loop
+                            if (tState.matches.length > 0) {
+                                tState.nextRoundPending = false;
+                            }
+                        });
                     }
                     this.broadcastState(tId);
                     return;
@@ -194,6 +207,7 @@ class TournamentManager {
         tState.round++;
         tState.status = 'live';
         tState.matches = [];
+        tState.nextRoundPending = false;
 
         const phaseName = tState.players.length === 2 ? 'final' :
             tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`;
@@ -212,7 +226,7 @@ class TournamentManager {
             if (s1.size > 0 && s2.size > 0) {
                 await this.setupMatch(p1, p2, tState);
             } else if (s1.size > 0 && s2.size === 0) {
-                p1.score += 15; // Auto-win score
+                p1.score += 15;
                 console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p1.username} (Opponent ${p2.username} absent)`);
                 supabase.from('tournament_players').update({ score: p1.score }).eq('tournament_id', tState.id).eq('user_id', p1.user_id).then(()=>{});
             } else if (s1.size === 0 && s2.size > 0) {
@@ -230,6 +244,22 @@ class TournamentManager {
             const s = userSockets.get(pBye.user_id) || new Set();
             s.forEach(sid => this.io.to(sid).emit('tournament_msg', { message: 'You got a BYE! Advancing.' }));
         }
+
+        // FIX: If no actual matches were created (all auto-wins / no-shows),
+        // immediately process round results and move to next round after a short rest
+        if (tState.matches.length === 0) {
+            console.log(`⚡ TR-${tState.tr_id} Round ${tState.round}: No live matches (all auto-wins). Fast-advancing...`);
+            this.processRoundResults(tState);
+            if (tState.players.length <= 1) {
+                return this.finishTournament(tState.id, tState);
+            }
+            // Short rest then next round
+            tState.status = 'rest';
+            tState.countdown = 10;
+            this.broadcastState(tState.id);
+            return;
+        }
+
         this.broadcastState(tState.id);
     }
 
@@ -394,6 +424,27 @@ class TournamentManager {
         }
     }
 
+    // FIX: Called when a player (re)authenticates — rejoins their tournament room
+    // and marks them as connected in any active tournament match
+    static onPlayerConnected(userId, socket) {
+        // Rejoin all active tournament rooms this player belongs to
+        activeTourneys.forEach((tState, tId) => {
+            const inTournament = tState.allPlayers.some(p => p.user_id === userId);
+            if (inTournament) {
+                socket.join(`tournament_${String(tId)}`);
+                console.log(`🔗 TR-${tState.tr_id}: Player ${userId} rejoined tournament room on reconnect`);
+            }
+        });
+
+        // Rejoin active tournament match and resume if waiting
+        activeTournamentMatches.forEach((match, matchId) => {
+            if (match.player1.userId === userId || match.player2.userId === userId) {
+                this.rejoinMatch(socket, matchId, userId);
+                console.log(`🔗 Match ${matchId}: Player ${userId} reconnected`);
+            }
+        });
+    }
+
     static rejoinMatch(socket, matchId, userId) {
         const match = activeTournamentMatches.get(matchId);
         if (!match) return false;
@@ -422,6 +473,68 @@ class TournamentManager {
             if (match.player1.userId === userId) { match.disconnectGrace = 3; match.disconnectedPlayer = 'p1'; }
             else if (match.player2.userId === userId) { match.disconnectGrace = 3; match.disconnectedPlayer = 'p2'; }
         });
+    }
+
+    // ─── ROBUST RECOVERY & SAFE TRIGGER ────────────────────────
+
+    static async transitionToLive(tournamentId) {
+        const tState = activeTourneys.get(tournamentId);
+        if (!tState) return;
+
+        const liveLobbyDuration = 120 * 1000;
+        const liveLobbyEndsAt = new Date(Date.now() + liveLobbyDuration).toISOString();
+
+        // 1. Update status in DB and set the Lobby End timestamp
+        const { data: t, error } = await supabase.from('tournaments')
+            .update({ 
+                status: 'live', 
+                phase: 'lobby',
+                live_lobby_ends_at: liveLobbyEndsAt
+            })
+            .eq('id', tournamentId)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // 2. SAFE TRIGGER: Create replacement tournament if not already done
+        if (t && !t.next_created) {
+            console.log(`🚀 TR-${t.tr_id} is now LIVE. Triggering next tournament creation...`);
+            
+            // Mark as created FIRST to prevent duplicates (Idempotent)
+            await supabase.from('tournaments').update({ next_created: true }).eq('id', tournamentId);
+            
+            const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+            autoCreatePaidTournaments().catch(err => console.error('AutoCreate Error:', err));
+        }
+
+        // 3. Update Memory State
+        tState.status = 'live';
+        tState.countdown = 120;
+        this.broadcastState(tournamentId);
+        console.log(`📡 TR-${tState.tr_id} successfully transitioned to LIVE.`);
+    }
+
+    static async recoverStuckTournaments() {
+        console.log('🔄 Checking for stuck tournaments during startup...');
+        const { data: stuck } = await supabase.from('tournaments')
+            .select('*')
+            .in('status', ['full', 'starting'])
+            .eq('type', 'paid');
+        
+        if (!stuck || stuck.length === 0) return;
+
+        for (const t of stuck) {
+            const now = new Date();
+            const startTime = new Date(t.start_time);
+            
+            if (now >= startTime) {
+                console.log(`🔧 Recovering TR-${t.tr_id}: Transitioning to LIVE.`);
+                // Pickup first to ensure it's in memory
+                await this.pickupTournament(t.id);
+                await this.transitionToLive(t.id);
+            }
+        }
     }
 }
 

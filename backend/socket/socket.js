@@ -94,6 +94,9 @@ module.exports = (io) => {
       try {
         await supabase.from('profiles').update({ is_online: true, last_seen: new Date().toISOString() }).eq('id', userId);
         
+        // FIX: Rejoin any active tournament rooms + matches on reconnect
+        TournamentManager.onPlayerConnected(userId, socket);
+
         // Notify friends that this user is now online
         const { data: friends } = await supabase.from('friends').select('user_id, friend_id').or(`user_id.eq.${userId},friend_id.eq.${userId}`).eq('status', 'accepted');
         if (friends) {
