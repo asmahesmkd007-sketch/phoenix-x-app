@@ -7,6 +7,7 @@ const activeTournamentMatches = new Map();
 
 class TournamentManager {
     static init(io) {
+        console.log('🚀 TournamentManager.init starting...');
         this.io = io;
         setInterval(() => this.tick(), 1000);
         setInterval(() => this.pollLiveTournaments(), 5000);
@@ -18,7 +19,9 @@ class TournamentManager {
         }, 3 * 60 * 1000);
 
         // RECOVERY: Recover any stuck tournaments from previous session
-        this.recoverStuckTournaments().catch(err => console.error('Recovery Error:', err));
+        this.recoverStuckTournaments()
+            .then(() => console.log('✅ TournamentManager recovery complete.'))
+            .catch(err => console.error('❌ Recovery Error:', err));
     }
 
     static async pollLiveTournaments() {
@@ -57,17 +60,45 @@ class TournamentManager {
     }
 
     static async pickupTournament(tournamentId) {
-        if (activeTourneys.has(tournamentId)) return;
+        console.log(`[DEBUG] pickupTournament starting for ${tournamentId}`);
+        if (activeTourneys.has(tournamentId)) {
+            console.log(`[DEBUG] Tournament ${tournamentId} already in memory.`);
+            return;
+        }
         
-        const { data: t } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
-        if (!t || !['full', 'starting', 'live'].includes(t.status)) return;
+        const { data: t, error } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
+        if (error) {
+            console.error(`[DEBUG] Error fetching TR for pickup:`, error);
+            return;
+        }
 
-        let { data: players } = await supabase.from('tournament_players')
+        if (!t) {
+            console.log(`[DEBUG] No tournament data found for ${tournamentId}`);
+            return;
+        }
+
+        if (!['full', 'starting', 'live'].includes(t.status)) {
+            console.log(`[DEBUG] Tournament ${tournamentId} status (${t.status}) not eligible for pickup.`);
+            return;
+        }
+
+        console.log(`[DEBUG] Fetching players for TR-${t.tr_id}...`);
+        let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
-            .order('created_at', { ascending: true }) // Take first 16 by join time
+            .order('joined_at', { ascending: true }) // Take first 16 by join time
             .limit(16);
         
-        if (!players || players.length === 0) return;
+        if (pError) {
+            console.error(`[DEBUG] Error fetching players for pickup:`, pError);
+            return;
+        }
+
+        if (!players || players.length === 0) {
+            console.log(`[DEBUG] No players found for TR-${t.tr_id}. Skipping pickup.`);
+            return;
+        }
+
+        console.log(`[DEBUG] Successfully fetched ${players.length} players. Initializing TR-${t.tr_id} in memory.`);
 
         const playersData = players.map((p, i) => ({
             user_id: p.user_id, username: p.profiles?.username || 'Unknown',
@@ -78,14 +109,16 @@ class TournamentManager {
     }
 
     static startTournament(tournamentId, playersData, tData) {
+        console.log(`[DEBUG] startTournament for TR-${tData.tr_id} (Status: ${tData.status})`);
         let countdown = 120;
         
         if (tData.status === 'live' && tData.live_lobby_ends_at) {
-            // Recovery: Calculate remaining time from DB timestamp
             const endsAt = new Date(tData.live_lobby_ends_at);
             countdown = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+            console.log(`[DEBUG] Recovery: Live Lobby ends at ${tData.live_lobby_ends_at}. Calculated countdown: ${countdown}`);
         } else if (tData.start_time) {
             countdown = Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000));
+            console.log(`[DEBUG] Calculated countdown from start_time: ${countdown}`);
         }
 
         const tState = {
@@ -95,13 +128,18 @@ class TournamentManager {
             status: tData.status || 'full', 
             countdown,
             round: 0, matches: [],
-            nextRoundPending: false,  // FIX: Guard against duplicate nextRound calls
+            nextRoundPending: false, 
             prize_pool: tData.prize_pool || 0
         };
+
         activeTourneys.set(tournamentId, tState);
+        console.log(`[DEBUG] Tournament TR-${tData.tr_id} added to activeTourneys map.`);
     }
 
     static tick() {
+        if (activeTourneys.size > 0) {
+            console.log(`[DEBUG] Tick pulse: ${activeTourneys.size} active tournaments.`);
+        }
         activeTourneys.forEach((tState, tId) => {
             // FULL → STARTING
             if (tState.status === 'full') {
@@ -130,14 +168,12 @@ class TournamentManager {
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
 
                     if (tState.countdown <= 0) {
-                        tState.nextRoundPending = true; // FIX: prevent re-entry
+                        tState.nextRoundPending = true; 
                         console.log(`🎮 TR-${tState.tr_id} starting matches (Round ${tState.round + 1})`);
-                        this.nextRound(tState).finally(() => {
-                            // FIX: Only clear flag if matches were actually created;
-                            // if still empty (all auto-wins), keep pending so we don't loop
-                            if (tState.matches.length > 0) {
-                                tState.nextRoundPending = false;
-                            }
+                        this.nextRound(tState).catch(err => {
+                            console.error(`[CRITICAL] nextRound failed for TR-${tState.tr_id}:`, err);
+                        }).finally(() => {
+                            tState.nextRoundPending = false;
                         });
                     }
                     this.broadcastState(tId);
@@ -478,12 +514,17 @@ class TournamentManager {
     // ─── ROBUST RECOVERY & SAFE TRIGGER ────────────────────────
 
     static async transitionToLive(tournamentId) {
+        console.log(`[DEBUG] transitionToLive starting for ID: ${tournamentId}`);
         const tState = activeTourneys.get(tournamentId);
-        if (!tState) return;
+        if (!tState) {
+            console.log(`[DEBUG] No tState found in memory for ${tournamentId}`);
+            return;
+        }
 
         const liveLobbyDuration = 120 * 1000;
         const liveLobbyEndsAt = new Date(Date.now() + liveLobbyDuration).toISOString();
 
+        console.log(`[DEBUG] Updating DB status to LIVE for ${tournamentId}...`);
         // 1. Update status in DB and set the Lobby End timestamp
         const { data: t, error } = await supabase.from('tournaments')
             .update({ 
@@ -495,7 +536,12 @@ class TournamentManager {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error(`[DEBUG] DB Update Error:`, error);
+            throw error;
+        }
+
+        console.log(`[DEBUG] DB Updated successfully for ${tournamentId}. Status is now LIVE.`);
 
         // 2. SAFE TRIGGER: Create replacement tournament if not already done
         if (t && !t.next_created) {
@@ -517,22 +563,36 @@ class TournamentManager {
 
     static async recoverStuckTournaments() {
         console.log('🔄 Checking for stuck tournaments during startup...');
-        const { data: stuck } = await supabase.from('tournaments')
+        const { data: stuck, error } = await supabase.from('tournaments')
             .select('*')
             .in('status', ['full', 'starting'])
             .eq('type', 'paid');
         
-        if (!stuck || stuck.length === 0) return;
+        if (error) {
+            console.error('[DEBUG] Recovery Fetch Error:', error);
+            return;
+        }
+
+        if (!stuck || stuck.length === 0) {
+            console.log('[DEBUG] No stuck tournaments found.');
+            return;
+        }
+
+        console.log(`[DEBUG] Found ${stuck.length} potentially stuck tournaments.`);
 
         for (const t of stuck) {
             const now = new Date();
             const startTime = new Date(t.start_time);
+            
+            console.log(`[DEBUG] Checking TR-${t.tr_id}: start_time=${t.start_time}, now=${now.toISOString()}`);
             
             if (now >= startTime) {
                 console.log(`🔧 Recovering TR-${t.tr_id}: Transitioning to LIVE.`);
                 // Pickup first to ensure it's in memory
                 await this.pickupTournament(t.id);
                 await this.transitionToLive(t.id);
+            } else {
+                console.log(`[DEBUG] TR-${t.tr_id} is not yet due to start.`);
             }
         }
     }

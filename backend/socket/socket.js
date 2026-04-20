@@ -538,3 +538,4 @@ module.exports = (io) => {
 module.exports.userToSocket = userToSocket;
 module.exports.socketToUser = socketToUser;
 module.exports.activeGames = activeGames;
+module.exports.userSockets = userSockets;
