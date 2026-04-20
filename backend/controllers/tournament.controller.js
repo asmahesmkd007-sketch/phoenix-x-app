@@ -96,20 +96,13 @@ const joinTournament = async (req, res) => {
     const TournamentManager = require('../services/tournament.manager');
     TournamentManager.pollLiveTournaments().catch(()=>{});
 
-    // Auto-create next batch if this one just went full/live
-    if (newStatus === 'live' || newStatus === 'full') {
-        autoCreatePaidTournaments().catch(()=>{});
-    }
-
     res.json({ success: true, message: 'Joined successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 };
 
-const autoCreatePaidTournaments = async () => {
-  // Logic removed as per request to keep Paid TR empty.
-};
+const autoCreatePaidTournaments = async () => {};
 
 const distributeTournamentPrizes = async (tournament) => {
   try {
@@ -162,9 +155,7 @@ const updateTournamentStatuses = async () => {
     } catch(e) {}
 };
 
-const autoCreateMorningSpecial = async () => {
-  // Logic removed as per request to keep Paid TR empty.
-};
+const autoCreateMorningSpecial = async () => {};
 
 const getLeaderboard = async (req, res) => {
   try {
