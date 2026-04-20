@@ -89,6 +89,11 @@ class TournamentManager {
         } else if (tData.start_time) {
             countdown = Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000));
         }
+        
+        // Cap lobby countdown at 60s for paid knockout tournaments
+        if (tData.type === 'paid') {
+            countdown = Math.min(60, countdown);
+        }
 
         const tState = {
             id: tournamentId, tr_id: tData.tr_id,
