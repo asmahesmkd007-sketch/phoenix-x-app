@@ -35,13 +35,11 @@ class TournamentManager {
                     const { count } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', ut.id);
                     if (count >= (ut.max_players || 16)) {
                         console.log(`🔧 Self-healing TR-${ut.tr_id}: Forcing LOCKED (Actual count: ${count})`);
-                        // Set current_players to exactly 16 for consistency
                         await supabase.from('tournaments').update({ 
                             status: 'full', 
                             current_players: 16,
                             start_time: new Date(Date.now() + 120000).toISOString() 
                         }).eq('id', ut.id);
-
                         this.pickupTournament(ut.id).catch(()=>{});
                     }
                 }
@@ -60,45 +58,19 @@ class TournamentManager {
     }
 
     static async pickupTournament(tournamentId) {
-        console.log(`[DEBUG] pickupTournament starting for ${tournamentId}`);
-        if (activeTourneys.has(tournamentId)) {
-            console.log(`[DEBUG] Tournament ${tournamentId} already in memory.`);
-            return;
-        }
+        if (activeTourneys.has(tournamentId)) return;
         
         const { data: t, error } = await supabase.from('tournaments').select('*').eq('id', tournamentId).single();
-        if (error) {
-            console.error(`[DEBUG] Error fetching TR for pickup:`, error);
-            return;
-        }
+        if (error || !t) return;
 
-        if (!t) {
-            console.log(`[DEBUG] No tournament data found for ${tournamentId}`);
-            return;
-        }
+        if (!['full', 'starting', 'live'].includes(t.status)) return;
 
-        if (!['full', 'starting', 'live'].includes(t.status)) {
-            console.log(`[DEBUG] Tournament ${tournamentId} status (${t.status}) not eligible for pickup.`);
-            return;
-        }
-
-        console.log(`[DEBUG] Fetching players for TR-${t.tr_id}...`);
         let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
-            .order('joined_at', { ascending: true }) // Take first 16 by join time
+            .order('joined_at', { ascending: true })
             .limit(16);
         
-        if (pError) {
-            console.error(`[DEBUG] Error fetching players for pickup:`, pError);
-            return;
-        }
-
-        if (!players || players.length === 0) {
-            console.log(`[DEBUG] No players found for TR-${t.tr_id}. Skipping pickup.`);
-            return;
-        }
-
-        console.log(`[DEBUG] Successfully fetched ${players.length} players. Initializing TR-${t.tr_id} in memory.`);
+        if (pError || !players || players.length === 0) return;
 
         const playersData = players.map((p, i) => ({
             user_id: p.user_id, username: p.profiles?.username || 'Unknown',
@@ -109,16 +81,13 @@ class TournamentManager {
     }
 
     static startTournament(tournamentId, playersData, tData) {
-        console.log(`[DEBUG] startTournament for TR-${tData.tr_id} (Status: ${tData.status})`);
         let countdown = 120;
         
         if (tData.status === 'live' && tData.live_lobby_ends_at) {
             const endsAt = new Date(tData.live_lobby_ends_at);
             countdown = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
-            console.log(`[DEBUG] Recovery: Live Lobby ends at ${tData.live_lobby_ends_at}. Calculated countdown: ${countdown}`);
         } else if (tData.start_time) {
             countdown = Math.max(0, Math.floor((new Date(tData.start_time) - Date.now()) / 1000));
-            console.log(`[DEBUG] Calculated countdown from start_time: ${countdown}`);
         }
 
         const tState = {
@@ -126,22 +95,19 @@ class TournamentManager {
             players: [...playersData], allPlayers: [...playersData],
             max: tData.max_players, timer: tData.timer_type,
             status: tData.status || 'full', 
+            phase: tData.phase || (tData.status === 'live' ? 'lobby' : 'upcoming'),
             countdown,
-            round: 0, matches: [],
+            round: tData.round || 0, matches: [],
             nextRoundPending: false, 
             prize_pool: tData.prize_pool || 0
         };
 
         activeTourneys.set(tournamentId, tState);
-        console.log(`[DEBUG] Tournament TR-${tData.tr_id} added to activeTourneys map.`);
     }
 
     static tick() {
-        if (activeTourneys.size > 0) {
-            console.log(`[DEBUG] Tick pulse: ${activeTourneys.size} active tournaments.`);
-        }
         activeTourneys.forEach((tState, tId) => {
-            // FULL → STARTING
+            // FULL → Transitions to LIVE
             if (tState.status === 'full') {
                 tState.countdown--;
                 this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
@@ -152,80 +118,68 @@ class TournamentManager {
                     this.broadcastState(tId);
                 }
             }
-            // STARTING / REST → countdown → next round
-            else if (tState.status === 'starting' || tState.status === 'rest') {
-                tState.countdown--;
-                this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
-
-                if (tState.countdown <= 0) this.nextRound(tState);
-                else if (tState.countdown % 5 === 0) this.broadcastState(tId);
-            }
-            // LIVE → check all matches done
+            // LIVE → Handle Lobby or Matches
             else if (tState.status === 'live') {
-                // LIVE LOBBY WAIT (before Round 1 matches are created)
-                if (tState.matches.length === 0 && !tState.nextRoundPending) {
+                if (tState.phase === 'lobby') {
                     tState.countdown--;
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
-
-                    if (tState.countdown <= 0) {
-                        tState.nextRoundPending = true; 
-                        console.log(`🎮 TR-${tState.tr_id} starting matches (Round ${tState.round + 1})`);
-                        this.nextRound(tState).catch(err => {
-                            console.error(`[CRITICAL] nextRound failed for TR-${tState.tr_id}:`, err);
-                        }).finally(() => {
-                            tState.nextRoundPending = false;
-                        });
+                    
+                    if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                        tState.nextRoundPending = true;
+                        console.log(`🎮 TR-${tState.tr_id} Lobby ends. Starting Round 1.`);
+                        tState.phase = 'round_1';
+                        tState.round = 1;
+                        this.nextRound(tState).finally(() => tState.nextRoundPending = false);
                     }
-                    this.broadcastState(tId);
-                    return;
-                }
-
-                const allDone = tState.matches.every(m => m.status === 'finished');
-                if (allDone && tState.matches.length > 0) {
-                    tState.status = 'rest';
-                    tState.countdown = 15;
-                    this.processRoundResults(tState);
-                    this.broadcastState(tId);
-                }
-
-                // Connect timeout check (15s buffer)
-                tState.matches.forEach(m => {
-                    if (m.status === 'waiting_connect') {
-                        m.connectTimeout--;
-                        if (m.connectTimeout <= 0) {
-                            const p1Online = m.player1.connected;
-                            const p2Online = m.player2.connected;
-                            if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
-                            else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
-                            else this.resolveMatch(m.id, 'draw', null, 'both_no_show');
-                        }
+                    if (tState.countdown % 10 === 0) this.broadcastState(tId);
+                } 
+                else if (tState.matches.length > 0) {
+                    const allDone = tState.matches.every(m => m.status === 'finished');
+                    if (allDone && !tState.nextRoundPending) {
+                        console.log(`🏁 TR-${tState.tr_id} Round ${tState.round} finished.`);
+                        tState.status = 'rest';
+                        tState.countdown = 15;
+                        this.processRoundResults(tState);
+                        this.broadcastState(tId);
                     }
-                });
+                }
             }
-            this.broadcastState(tId);
+            // REST → Countdown to next round
+            else if (tState.status === 'rest') {
+                tState.countdown--;
+                this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
+                if (tState.countdown <= 0 && !tState.nextRoundPending) {
+                    tState.nextRoundPending = true;
+                    this.nextRound(tState).finally(() => tState.nextRoundPending = false);
+                }
+            }
+
+            // Sync Match Timers if they are active
+            tState.matches.forEach(m => {
+                if (m.status === 'waiting_connect') {
+                    m.connectTimeout--;
+                    if (m.connectTimeout <= 0) {
+                        const p1Online = m.player1.connected;
+                        const p2Online = m.player2.connected;
+                        if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
+                        else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
+                        else this.resolveMatch(m.id, 'draw', null, 'both_no_show');
+                    }
+                }
+            });
         });
 
-        // Tick active match timers
+        // Global Match Timer Tick
         activeTournamentMatches.forEach((match, matchId) => {
-            if (match.status !== 'playing') return;
-
-            // Timer tick
+            if (match.status !== 'live') return; // Note: 'live' matches are playing
             if (match.turn === 'w') match.player1.time--;
             else match.player2.time--;
-
-            // Emit timer only to match room
-            this.io.to(match.roomId).emit('timer_update', {
-                white_time: match.player1.time, black_time: match.player2.time
-            });
-
-            // Timeout check
+            this.io.to(match.roomId).emit('timer_update', { white_time: match.player1.time, black_time: match.player2.time });
             if (match.player1.time <= 0 || match.player2.time <= 0) {
                 const result = match.player1.time <= 0 ? 'player2_win' : 'player1_win';
                 const winnerId = match.player1.time <= 0 ? match.player2.userId : match.player1.userId;
                 this.resolveMatch(matchId, result, winnerId, 'timeout');
             }
-
-            // Disconnect grace (3 sec)
             if (match.disconnectGrace !== null) {
                 match.disconnectGrace--;
                 if (match.disconnectGrace <= 0) {
@@ -240,22 +194,23 @@ class TournamentManager {
     static async nextRound(tState) {
         if (tState.players.length <= 1) return this.finishTournament(tState.id, tState);
 
-        tState.round++;
+        // Advance round only if we are coming from REST or Lobby
+        if (tState.status === 'rest') {
+            tState.round++;
+        }
+        
         tState.status = 'live';
         tState.matches = [];
-        tState.nextRoundPending = false;
+        const phaseName = tState.players.length === 2 ? 'final' : (tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`);
+        tState.phase = phaseName;
 
-        const phaseName = tState.players.length === 2 ? 'final' :
-            tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`;
-        await supabase.from('tournaments').update({ phase: phaseName, status: 'live' }).eq('id', tState.id);
+        await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
 
-        // Random shuffle
         const pool = [...tState.players].sort(() => Math.random() - 0.5);
         const { userSockets } = require('../socket/socket');
 
         while (pool.length >= 2) {
-            const p1 = pool.shift();
-            const p2 = pool.shift();
+            const p1 = pool.shift(); const p2 = pool.shift();
             const s1 = userSockets.get(p1.user_id) || new Set();
             const s2 = userSockets.get(p2.user_id) || new Set();
 
@@ -263,37 +218,28 @@ class TournamentManager {
                 await this.setupMatch(p1, p2, tState);
             } else if (s1.size > 0 && s2.size === 0) {
                 p1.score += 15;
-                console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p1.username} (Opponent ${p2.username} absent)`);
+                console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p1.username}`);
                 supabase.from('tournament_players').update({ score: p1.score }).eq('tournament_id', tState.id).eq('user_id', p1.user_id).then(()=>{});
             } else if (s1.size === 0 && s2.size > 0) {
                 p2.score += 15;
-                console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p2.username} (Opponent ${p1.username} absent)`);
+                console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p2.username}`);
                 supabase.from('tournament_players').update({ score: p2.score }).eq('tournament_id', tState.id).eq('user_id', p2.user_id).then(()=>{});
             } else {
                 console.log(`❌ Double No-Show TR-${tState.tr_id}: ${p1.username} & ${p2.username}`);
             }
         }
 
-        // Bye for odd player
         if (pool.length === 1) {
             const pBye = pool[0];
             const s = userSockets.get(pBye.user_id) || new Set();
             s.forEach(sid => this.io.to(sid).emit('tournament_msg', { message: 'You got a BYE! Advancing.' }));
         }
 
-        // FIX: If no actual matches were created (all auto-wins / no-shows),
-        // immediately process round results and move to next round after a short rest
         if (tState.matches.length === 0) {
-            console.log(`⚡ TR-${tState.tr_id} Round ${tState.round}: No live matches (all auto-wins). Fast-advancing...`);
+            console.log(`⚡ TR-${tState.tr_id} Fast-advancing Round ${tState.round}...`);
             this.processRoundResults(tState);
-            if (tState.players.length <= 1) {
-                return this.finishTournament(tState.id, tState);
-            }
-            // Short rest then next round
-            tState.status = 'rest';
-            tState.countdown = 10;
-            this.broadcastState(tState.id);
-            return;
+            if (tState.players.length <= 1) return this.finishTournament(tState.id, tState);
+            tState.status = 'rest'; tState.countdown = 10;
         }
 
         this.broadcastState(tState.id);
@@ -306,17 +252,15 @@ class TournamentManager {
             tournament_id: tState.id, status: 'active',
             round: tState.round
         }).select().single();
-        if (error || !dbMatch) { console.error('Match create failed:', error); return; }
+        if (error || !dbMatch) return;
 
-        const matchId = dbMatch.id;
-        const roomId = 'tr_' + matchId;
         const { userSockets } = require('../socket/socket');
         const s1 = userSockets.get(p1.user_id) || new Set();
         const s2 = userSockets.get(p2.user_id) || new Set();
 
         const match = {
-            id: matchId, tournamentId: tState.id, roomId, status: 'waiting_connect',
-            connectTimeout: 15, // 15 sec timeout
+            id: dbMatch.id, tournamentId: tState.id, roomId: 'tr_' + dbMatch.id, status: 'waiting_connect',
+            connectTimeout: 30, // Increased to 30s
             chess: new Chess(), turn: 'w',
             player1: { userId: p1.user_id, time: tState.timer * 60, socketId: [...s1][0], score: 0, connected: s1.size > 0 },
             player2: { userId: p2.user_id, time: tState.timer * 60, socketId: [...s2][0], score: 0, connected: s2.size > 0 },
@@ -325,13 +269,15 @@ class TournamentManager {
         
         if (match.player1.connected && match.player2.connected) match.status = 'live';
 
-        activeTournamentMatches.set(matchId, match);
+        activeTournamentMatches.set(dbMatch.id, match);
         tState.matches.push(match);
 
-        s1.forEach(sid => { const s = this.io.sockets.sockets.get(sid); if (s) { s.join(roomId); s.join(`tournament_${tState.id}`); } });
-        s2.forEach(sid => { const s = this.io.sockets.sockets.get(sid); if (s) { s.join(roomId); s.join(`tournament_${tState.id}`); } });
+        [s1, s2].forEach(s => s.forEach(sid => { 
+            const sock = this.io.sockets.sockets.get(sid); 
+            if (sock) { sock.join(match.roomId); sock.join(`tournament_${tState.id}`); } 
+        }));
 
-        const eventData = { matchId, roomId, duration: tState.timer * 60, round: tState.round, tr_id: tState.tr_id };
+        const eventData = { matchId: dbMatch.id, roomId: match.roomId, duration: tState.timer * 60, round: tState.round, tr_id: tState.tr_id };
         s1.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'white', opponent: p2 }));
         s2.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'black', opponent: p1 }));
     }
@@ -340,13 +286,11 @@ class TournamentManager {
         const winners = [];
         const { userSockets } = require('../socket/socket');
 
-        // Winners from actual matches
         tState.matches.forEach(m => {
             if (m.winnerId) {
                 const w = tState.players.find(p => p.user_id === m.winnerId);
                 if (w) winners.push(w);
             } else {
-                // Tiebreak: score → less time used → random
                 if (m.player1.score > m.player2.score) winners.push(tState.players.find(p => p.user_id === m.player1.userId));
                 else if (m.player2.score > m.player1.score) winners.push(tState.players.find(p => p.user_id === m.player2.userId));
                 else {
@@ -359,12 +303,10 @@ class TournamentManager {
             }
         });
 
-        // Auto-win players (no match created) — already have points added
         const matchedIds = new Set();
         tState.matches.forEach(m => { matchedIds.add(m.player1.userId); matchedIds.add(m.player2.userId); });
         tState.players.forEach(p => {
             if (!matchedIds.has(p.user_id)) {
-                // Check if online (auto-win recipients stay, absent get eliminated)
                 const online = (userSockets.get(p.user_id) || new Set()).size > 0;
                 if (online || p.score > 0) winners.push(p);
             }
@@ -395,7 +337,6 @@ class TournamentManager {
         match.player1.score += p1Pts + p1R;
         match.player2.score += p2Pts + p2R;
 
-        // Sync to DB for Admin/Prize distribution
         supabase.from('tournament_players').update({ score: match.player1.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player1.userId).then(()=>{});
         supabase.from('tournament_players').update({ score: match.player2.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player2.userId).then(()=>{});
 
@@ -411,12 +352,10 @@ class TournamentManager {
     static handleMove(userId, matchId, moveSan) {
         const match = activeTournamentMatches.get(matchId);
         if (!match || match.status !== 'live') return false;
-        if ((match.turn === 'w' && match.player1.userId !== userId) || (match.turn === 'b' && match.player2.userId !== userId)) return false;
         try {
             const moveData = match.chess.move(moveSan);
             if (!moveData) return false;
-            match.turn = match.chess.turn();
-            match.fen = match.chess.fen();
+            match.turn = match.chess.turn(); match.fen = match.chess.fen();
             this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.fen, turn: match.turn });
             if (match.chess.isGameOver()) {
                 const r = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
@@ -439,44 +378,32 @@ class TournamentManager {
     }
 
     static broadcastState(tournamentId) {
-        if (!this.io) return;
         const tState = activeTourneys.get(tournamentId);
-        if (!tState) return;
-        const tIdStr = String(tournamentId);
+        if (!tState || !this.io) return;
         const cleanState = {
-            id: tState.id, tr_id: tState.tr_id, status: tState.status,
+            id: tState.id, tr_id: tState.tr_id, status: tState.status, phase: tState.phase,
             countdown: tState.countdown, round: tState.round,
             players: tState.players.map(p => ({ user_id: p.user_id, username: p.username, rank: p.rank, score: p.score, status: p.status, slot: p.slot })),
             matches: tState.matches.map(m => ({
                 id: m.id, roomId: m.roomId, status: m.status,
-                player1: { userId: m.player1.userId, time: m.player1.time, score: m.player1.score },
-                player2: { userId: m.player2.userId, time: m.player2.time, score: m.player2.score },
+                player1: { userId: m.player1.userId, time: m.player1.time, score: m.player1.score, connected: m.player1.connected },
+                player2: { userId: m.player2.userId, time: m.player2.time, score: m.player2.score, connected: m.player2.connected },
                 fen: m.fen
             }))
         };
-        this.io.to(`tournament_${tIdStr}`).emit(`tournament_sync_${tIdStr}`, cleanState);
-        if (['full', 'starting', 'rest', 'completed'].includes(tState.status)) {
-            this.io.emit(`tournament_global_sync_${tIdStr}`, cleanState);
-        }
+        this.io.to(`tournament_${tournamentId}`).emit(`tournament_sync_${tournamentId}`, cleanState);
     }
 
-    // FIX: Called when a player (re)authenticates — rejoins their tournament room
-    // and marks them as connected in any active tournament match
     static onPlayerConnected(userId, socket) {
-        // Rejoin all active tournament rooms this player belongs to
         activeTourneys.forEach((tState, tId) => {
-            const inTournament = tState.allPlayers.some(p => p.user_id === userId);
-            if (inTournament) {
-                socket.join(`tournament_${String(tId)}`);
-                console.log(`🔗 TR-${tState.tr_id}: Player ${userId} rejoined tournament room on reconnect`);
+            if (tState.allPlayers.some(p => p.user_id === userId)) {
+                socket.join(`tournament_${tId}`);
+                this.broadcastState(tId);
             }
         });
-
-        // Rejoin active tournament match and resume if waiting
         activeTournamentMatches.forEach((match, matchId) => {
             if (match.player1.userId === userId || match.player2.userId === userId) {
                 this.rejoinMatch(socket, matchId, userId);
-                console.log(`🔗 Match ${matchId}: Player ${userId} reconnected`);
             }
         });
     }
@@ -488,12 +415,8 @@ class TournamentManager {
         else if (match.player2.userId === userId) { match.player2.socketId = socket.id; match.player2.connected = true; }
         else return false;
 
-        if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) {
-            match.status = 'live';
-        }
-        if (match.disconnectGrace !== null) { match.disconnectGrace = null; match.disconnectedPlayer = null; }
+        if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) match.status = 'live';
         socket.join(match.roomId);
-        socket.join(`tournament_${match.tournamentId}`);
         socket.emit('match_rejoined', {
             roomId: match.roomId, fen: match.chess.fen(), turn: match.turn,
             white_time: match.player1.time, black_time: match.player2.time,
@@ -505,94 +428,42 @@ class TournamentManager {
 
     static handleDisconnect(userId) {
         activeTournamentMatches.forEach((match) => {
-            if (match.status !== 'live') return;
-            if (match.player1.userId === userId) { match.disconnectGrace = 3; match.disconnectedPlayer = 'p1'; }
-            else if (match.player2.userId === userId) { match.disconnectGrace = 3; match.disconnectedPlayer = 'p2'; }
+            if (match.player1.userId === userId) { match.player1.connected = false; match.disconnectGrace = 10; }
+            else if (match.player2.userId === userId) { match.player2.connected = false; match.disconnectGrace = 10; }
         });
     }
 
-    // ─── ROBUST RECOVERY & SAFE TRIGGER ────────────────────────
-
     static async transitionToLive(tournamentId) {
-        console.log(`[DEBUG] transitionToLive starting for ID: ${tournamentId}`);
         const tState = activeTourneys.get(tournamentId);
-        if (!tState) {
-            console.log(`[DEBUG] No tState found in memory for ${tournamentId}`);
-            return;
-        }
+        if (!tState || tState.status === 'live') return;
 
-        const liveLobbyDuration = 120 * 1000;
-        const liveLobbyEndsAt = new Date(Date.now() + liveLobbyDuration).toISOString();
-
-        console.log(`[DEBUG] Updating DB status to LIVE for ${tournamentId}...`);
-        // 1. Update status in DB and set the Lobby End timestamp
-        const { data: t, error } = await supabase.from('tournaments')
-            .update({ 
-                status: 'live', 
-                phase: 'lobby',
-                live_lobby_ends_at: liveLobbyEndsAt
-            })
-            .eq('id', tournamentId)
-            .select()
-            .single();
-
-        if (error) {
-            console.error(`[DEBUG] DB Update Error:`, error);
-            throw error;
-        }
-
-        console.log(`[DEBUG] DB Updated successfully for ${tournamentId}. Status is now LIVE.`);
-
-        // 2. SAFE TRIGGER: Create replacement tournament if not already done
-        if (t && !t.next_created) {
-            console.log(`🚀 TR-${t.tr_id} is now LIVE. Triggering next tournament creation...`);
-            
-            // Mark as created FIRST to prevent duplicates (Idempotent)
-            await supabase.from('tournaments').update({ next_created: true }).eq('id', tournamentId);
-            
-            const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
-            autoCreatePaidTournaments().catch(err => console.error('AutoCreate Error:', err));
-        }
-
-        // 3. Update Memory State
+        // Update memory immediately to prevent re-entry
         tState.status = 'live';
+        tState.phase = 'lobby';
         tState.countdown = 120;
+
+        const liveLobbyEndsAt = new Date(Date.now() + 120000).toISOString();
+        const { data: t, error } = await supabase.from('tournaments')
+            .update({ status: 'live', phase: 'lobby', live_lobby_ends_at: liveLobbyEndsAt })
+            .eq('id', tournamentId).select().single();
+
+        if (error) return console.error('Transition Error:', error);
+
+        if (t && !t.next_created) {
+            await supabase.from('tournaments').update({ next_created: true }).eq('id', tournamentId);
+            const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+            autoCreatePaidTournaments().catch(()=>{});
+        }
         this.broadcastState(tournamentId);
-        console.log(`📡 TR-${tState.tr_id} successfully transitioned to LIVE.`);
     }
 
     static async recoverStuckTournaments() {
-        console.log('🔄 Checking for stuck tournaments during startup...');
-        const { data: stuck, error } = await supabase.from('tournaments')
-            .select('*')
-            .in('status', ['full', 'starting'])
-            .eq('type', 'paid');
-        
-        if (error) {
-            console.error('[DEBUG] Recovery Fetch Error:', error);
-            return;
-        }
-
-        if (!stuck || stuck.length === 0) {
-            console.log('[DEBUG] No stuck tournaments found.');
-            return;
-        }
-
-        console.log(`[DEBUG] Found ${stuck.length} potentially stuck tournaments.`);
-
+        const { data: stuck } = await supabase.from('tournaments').select('*').in('status', ['full', 'starting']).eq('type', 'paid');
+        if (!stuck) return;
         for (const t of stuck) {
-            const now = new Date();
-            const startTime = new Date(t.start_time);
-            
-            console.log(`[DEBUG] Checking TR-${t.tr_id}: start_time=${t.start_time}, now=${now.toISOString()}`);
-            
-            if (now >= startTime) {
-                console.log(`🔧 Recovering TR-${t.tr_id}: Transitioning to LIVE.`);
-                // Pickup first to ensure it's in memory
+            if (new Date() >= new Date(t.start_time)) {
                 await this.pickupTournament(t.id);
                 await this.transitionToLive(t.id);
-            } else {
-                console.log(`[DEBUG] TR-${t.tr_id} is not yet due to start.`);
             }
         }
     }
