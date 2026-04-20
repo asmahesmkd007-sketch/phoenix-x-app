@@ -166,9 +166,9 @@ const autoCreatePaidTournaments = async () => {
         .eq('timer_type', TIMER)
         .eq('entry_fee', entry)
         .eq('status', 'upcoming')
-        .maybeSingle();
+        .limit(1);
       
-      if (!existing) {
+      if (existing && existing.length > 0) continue; // Skip if any upcoming one exists
         // Generate TR ID (global counter)
         const { data: lastTR } = await supabase.from('tournaments')
           .select('tr_id')
