@@ -394,7 +394,10 @@
 
         sock.on('tournament_eliminated', () => {
              localStorage.removeItem(`px_active_match_${tournamentId}`);
-             showLobby('Eliminated 😔', 'You were knocked out. Stick around to watch the leaderboard!', false, true, 'Back to Dashboard', ()=>window.location.href='/pages/dashboard.html');
+             showLobby('Eliminated 😔', 'You were knocked out. Redirecting to dashboard...', false, false);
+             setTimeout(() => {
+                  window.location.href = '/pages/dashboard.html';
+             }, 3000);
         });
     }
 

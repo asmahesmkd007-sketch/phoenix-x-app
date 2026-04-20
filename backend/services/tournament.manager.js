@@ -298,7 +298,22 @@ class TournamentManager {
             }
         });
 
+        const oldPlayerIds = new Set(tState.players.map(p => p.user_id));
         tState.players = winners.filter(Boolean).map((p, idx) => ({ ...p, slot: idx + 1 }));
+        const newPlayerIds = new Set(tState.players.map(p => p.user_id));
+
+        // Notify eliminated players
+        oldPlayerIds.forEach(id => {
+            if (!newPlayerIds.has(id)) {
+                const sockets = userSockets.get(id);
+                if (sockets) {
+                    sockets.forEach(sid => {
+                        this.io.to(sid).emit('tournament_msg', { message: 'You have been eliminated.' });
+                        this.io.to(sid).emit('tournament_eliminated');
+                    });
+                }
+            }
+        });
     }
 
     static async resolveMatch(matchId, result, winnerId, reason) {
