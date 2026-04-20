@@ -81,7 +81,7 @@ class TournamentManager {
     }
 
     static startTournament(tournamentId, playersData, tData) {
-        let countdown = 120;
+        let countdown = 60; // 1 minute lobby before Round 1 starts
         
         if (tData.status === 'live' && tData.live_lobby_ends_at) {
             const endsAt = new Date(tData.live_lobby_ends_at);
@@ -201,6 +201,8 @@ class TournamentManager {
     static async nextRound(tState) {
         if (tState.players.length <= 1) return this.finishTournament(tState.id, tState);
 
+        tState.matches = []; // Clear previous round matches
+
         // Advance round only if we are coming from REST or Lobby
         if (tState.status === 'rest') {
             tState.round++;
@@ -244,26 +246,32 @@ class TournamentManager {
         const s1 = userSockets.get(p1.user_id) || new Set();
         const s2 = userSockets.get(p2.user_id) || new Set();
 
+        const p1Online = s1.size > 0;
+        const p2Online = s2.size > 0;
+        console.log(`🔍 TR Match Setup: ${p1.username}(${p1Online}) vs ${p2.username}(${p2Online})`);
+
         const match = {
-            id: dbMatch.id, tournamentId: tState.id, roomId: 'tr_' + dbMatch.id, status: 'waiting_connect',
-            connectTimeout: 30, // Increased to 30s
-            chess: new Chess(), turn: 'w',
-            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: [...s1][0], score: 0, connected: s1.size > 0 },
-            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: [...s2][0], score: 0, connected: s2.size > 0 },
-            winnerId: null, fen: 'start', disconnectGrace: null, disconnectedPlayer: null
+            id: dbMatch.id,
+            tournamentId: tState.id,
+            roomId: dbMatch.room_id || `tr_${dbMatch.id}`,
+            status: 'waiting_connect',
+            connectTimeout: 60,
+            chess: new Chess(),
+            turn: 'w',
+            player1: { userId: p1.user_id, time: tState.timer * 60, socketId: [...s1][0], score: 0, connected: p1Online },
+            player2: { userId: p2.user_id, time: tState.timer * 60, socketId: [...s2][0], score: 0, connected: p2Online },
+            winnerId: null,
+            fen: 'start',
+            disconnectGrace: null,
+            disconnectedPlayer: null
         };
-        
-        if (match.player1.connected && match.player2.connected) match.status = 'live';
+
+        if (p1Online && p2Online) match.status = 'live';
 
         activeTournamentMatches.set(dbMatch.id, match);
         tState.matches.push(match);
 
-        [s1, s2].forEach(s => s.forEach(sid => { 
-            const sock = this.io.sockets.sockets.get(sid); 
-            if (sock) { sock.join(match.roomId); sock.join(`tournament_${tState.id}`); } 
-        }));
-
-        const eventData = { matchId: dbMatch.id, roomId: match.roomId, duration: tState.timer * 60, round: tState.round, tr_id: tState.tr_id };
+        const eventData = { matchId: dbMatch.id, tournamentId: tState.id, timer: tState.timer, roomId: dbMatch.room_id };
         s1.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'white', opponent: p2 }));
         s2.forEach(sid => this.io.to(sid).emit('match_found_tr', { ...eventData, color: 'black', opponent: p1 }));
     }
@@ -317,6 +325,7 @@ class TournamentManager {
     }
 
     static async resolveMatch(matchId, result, winnerId, reason) {
+        console.log(`🏁 Resolving Match ${matchId} | Reason: ${reason} | Result: ${result}`);
         const match = activeTournamentMatches.get(matchId);
         if (!match || match.status === 'finished') return;
 
@@ -352,7 +361,14 @@ class TournamentManager {
 
     static handleMove(userId, matchId, moveSan) {
         const match = activeTournamentMatches.get(matchId);
-        if (!match || match.status !== 'live') return false;
+        if (!match || match.status === 'finished') return;
+
+        // If a move is made, the match is definitely live
+        if (match.status === 'waiting_connect') {
+            console.log(`✅ Match ${matchId} activated by move from ${userId}`);
+            match.status = 'live';
+        }
+
         try {
             const moveData = match.chess.move(moveSan);
             if (!moveData) return false;
