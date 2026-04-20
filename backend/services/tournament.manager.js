@@ -214,39 +214,18 @@ class TournamentManager {
         await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
 
         const pool = [...tState.players].sort(() => Math.random() - 0.5);
-        const { userSockets } = require('../socket/socket');
 
         while (pool.length >= 2) {
-            const p1 = pool.shift(); const p2 = pool.shift();
-            const s1 = userSockets.get(p1.user_id) || new Set();
-            const s2 = userSockets.get(p2.user_id) || new Set();
-
-            if (s1.size > 0 && s2.size > 0) {
-                await this.setupMatch(p1, p2, tState);
-            } else if (s1.size > 0 && s2.size === 0) {
-                p1.score += 15;
-                console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p1.username}`);
-                supabase.from('tournament_players').update({ score: p1.score }).eq('tournament_id', tState.id).eq('user_id', p1.user_id).then(()=>{});
-            } else if (s1.size === 0 && s2.size > 0) {
-                p2.score += 15;
-                console.log(`🏆 Auto-win TR-${tState.tr_id}: ${p2.username}`);
-                supabase.from('tournament_players').update({ score: p2.score }).eq('tournament_id', tState.id).eq('user_id', p2.user_id).then(()=>{});
-            } else {
-                console.log(`❌ Double No-Show TR-${tState.tr_id}: ${p1.username} & ${p2.username}`);
-            }
+            const p1 = pool.shift(); 
+            const p2 = pool.shift();
+            await this.setupMatch(p1, p2, tState);
         }
 
         if (pool.length === 1) {
             const pBye = pool[0];
+            const { userSockets } = require('../socket/socket');
             const s = userSockets.get(pBye.user_id) || new Set();
             s.forEach(sid => this.io.to(sid).emit('tournament_msg', { message: 'You got a BYE! Advancing.' }));
-        }
-
-        if (tState.matches.length === 0) {
-            console.log(`⚡ TR-${tState.tr_id} Fast-advancing Round ${tState.round}...`);
-            this.processRoundResults(tState);
-            if (tState.players.length <= 1) return this.finishTournament(tState.id, tState);
-            tState.status = 'rest'; tState.countdown = 10;
         }
 
         this.broadcastState(tState.id);
