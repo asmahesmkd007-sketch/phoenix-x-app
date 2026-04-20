@@ -101,13 +101,16 @@ const TournamentManager = require('./services/tournament.manager');
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ─── SCHEDULERS ───────────────────────────────────────────
-const { autoCreateFreeTournaments, autoCreatePaidTournaments, updateTournamentStatuses } = require('./controllers/tournament.controller');
+const { autoCreateFreeTournaments, autoCreatePaidTournaments, updateTournamentStatuses, autoCreateMorningSpecial } = require('./controllers/tournament.controller');
 
 // Update tournament statuses every 30 seconds
 setInterval(updateTournamentStatuses, 30 * 1000);
 
 // Run the Paid tournament auto-creation scheduler every minute
-// setInterval(autoCreatePaidTournaments, 60 * 1000);
+// setInterval(() => {
+//   autoCreatePaidTournaments();
+//   autoCreateMorningSpecial();
+// }, 60 * 1000);
 
 // Create initial batch of tournaments on startup (if none exist)
 setTimeout(() => {

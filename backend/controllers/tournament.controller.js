@@ -3,7 +3,11 @@ const { supabase } = require('../config/supabase');
 const getTournaments = async (req, res) => {
   try {
     const { type, status } = req.query;
-    let query = supabase.from('tournaments').select('*').order('created_at', { ascending: false }).limit(100);
+    let query = supabase.from('tournaments')
+      .select('*')
+      .order('timer_type', { ascending: true })
+      .order('entry_fee', { ascending: true })
+      .limit(100);
     
     if (type) query = query.eq('type', type);
     
@@ -92,6 +96,11 @@ const joinTournament = async (req, res) => {
     const TournamentManager = require('../services/tournament.manager');
     TournamentManager.pollLiveTournaments().catch(()=>{});
 
+    // Auto-create next batch if this one just went full/live
+    if (newStatus === 'live' || newStatus === 'full') {
+        autoCreatePaidTournaments().catch(()=>{});
+    }
+
     res.json({ success: true, message: 'Joined successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -99,31 +108,7 @@ const joinTournament = async (req, res) => {
 };
 
 const autoCreatePaidTournaments = async () => {
-  try {
-    const configs = [
-      { timer: 1, max: 16, entries: [5, 10, 15, 20, 30, 50, 80, 100, 200, 300, 500], name: '1 Min Knockout' },
-      { timer: 3, max: 32, entries: [10, 20, 50, 100], name: '3 Min Tournament' }
-    ];
-    
-    for (const conf of configs) {
-       for (const entry of conf.entries) {
-          const { data: existing } = await supabase.from('tournaments').select('id').eq('type', 'paid').eq('timer_type', conf.timer).eq('entry_fee', entry).eq('status', 'upcoming').maybeSingle();
-          if (!existing) {
-             const pool = entry * conf.max;
-             // 15% Platform Fee, 85% distributed: 35%, 30%, 20%
-             const prize_first = Math.floor(pool * 0.35);
-             const prize_second = Math.floor(pool * 0.30);
-             const prize_third = Math.floor(pool * 0.20);
-             
-             await supabase.from('tournaments').insert({
-               name: `${entry} Coin ${conf.name}`, type: 'paid', timer_type: conf.timer, format: 'standard',
-               entry_fee: entry, max_players: conf.max, status: 'upcoming', prize_pool: pool,
-               prize_first, prize_second, prize_third
-             });
-          }
-       }
-    }
-  } catch(e) { console.error('Auto-create error:', e); }
+  // Logic removed as per request to keep Paid TR empty.
 };
 
 const distributeTournamentPrizes = async (tournament) => {
@@ -177,6 +162,10 @@ const updateTournamentStatuses = async () => {
     } catch(e) {}
 };
 
+const autoCreateMorningSpecial = async () => {
+  // Logic removed as per request to keep Paid TR empty.
+};
+
 const getLeaderboard = async (req, res) => {
   try {
     const { data } = await supabase
@@ -190,4 +179,4 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-module.exports = { getTournaments, getTournamentById, joinTournament, getLeaderboard, autoCreateFreeTournaments, autoCreatePaidTournaments, updateTournamentStatuses, distributeTournamentPrizes };
+module.exports = { getTournaments, getTournamentById, joinTournament, getLeaderboard, autoCreateFreeTournaments, autoCreatePaidTournaments, updateTournamentStatuses, distributeTournamentPrizes, autoCreateMorningSpecial };

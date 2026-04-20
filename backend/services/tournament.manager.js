@@ -305,6 +305,10 @@ class TournamentManager {
         const { data: tData } = await supabase.from('tournaments').select('*').eq('id', tId).single();
         if (tData) await distributeTournamentPrizes(tData);
         activeTourneys.delete(tId);
+        
+        // Auto-create next batch as a fallback check
+        const { autoCreatePaidTournaments } = require('../controllers/tournament.controller');
+        autoCreatePaidTournaments().catch(()=>{});
     }
 
     static broadcastState(tournamentId) {
