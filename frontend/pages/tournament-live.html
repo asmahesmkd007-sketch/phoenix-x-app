@@ -332,7 +332,7 @@
                   document.getElementById('status-title').innerHTML = `STARTING: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
              } else if (state.status === 'live') {
                   const roundLabel = `ROUND ${state.round}`;
-                  showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
+                  if (!gameActive) showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
 
                   // Match Detection
                   if (state.matches && state.matches.length > 0) {
