@@ -33,6 +33,7 @@ const getTournaments = async (req, res) => {
 
     res.json({ success: true, tournaments });
   } catch (err) {
+    console.error('getTournaments error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 };
@@ -57,12 +58,14 @@ const getTournamentById = async (req, res) => {
 
     let leaderboard = [];
     if (tournament.status === 'completed') {
-      const { data: lb } = await supabase.from('leaderboard').select('*, profiles:user_id(username)').eq('tournament_id', id).order('rank', { ascending: true });
+      const { data: lb, error: lbError } = await supabase.from('leaderboard').select('*, profiles:user_id(username)').eq('tournament_id', req.params.id).order('rank', { ascending: true });
+      if (lbError) console.error('Leaderboard fetch error:', lbError);
       leaderboard = lb || [];
     }
 
     res.json({ success: true, tournament: { ...tournament, players: players || [], matches: matches || [], leaderboard } });
   } catch (err) {
+    console.error('getTournamentById error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 };

@@ -11,8 +11,12 @@ const authMiddleware = async (req, res, next) => {
     // Verify token with Supabase using Anon client
     const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
     if (error || !user) {
-      console.log('JWT Error:', error?.message);
-      return res.status(401).json({ success: false, message: 'Invalid or expired token.' });
+      console.error('🔑 [Auth] JWT Verification Failed:', error?.message || 'User not found');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid or expired token.',
+        debug: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      });
     }
 
     // Fetch profile from DB
@@ -23,9 +27,11 @@ const authMiddleware = async (req, res, next) => {
       .single();
 
     if (profileError || !profile) {
-      return res.status(401).json({ success: false, message: 'Profile not found.' });
+      console.error(`👤 [Auth] Profile not found for UID: ${user.id}`, profileError?.message);
+      return res.status(401).json({ success: false, message: 'Profile not found. Please complete signup.' });
     }
     if (profile.status === 'blocked' || profile.status === 'banned') {
+      console.warn(`🚫 [Auth] Blocked user attempt: ${profile.username}`);
       return res.status(403).json({ success: false, message: 'Account is blocked.' });
     }
 
