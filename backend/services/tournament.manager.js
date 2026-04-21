@@ -213,6 +213,30 @@ class TournamentManager {
     }
 
     static async nextRound(tState) {
+        // RE-FETCH FRESH PLAYER LIST FOR ROUND 1
+        if (tState.round <= 1) {
+            const { data: freshPlayers } = await supabase.from('tournament_players')
+                .select('*, profiles(username, rank)').eq('tournament_id', tState.id)
+                .order('joined_at', { ascending: true });
+            
+            if (freshPlayers && freshPlayers.length > 0) {
+                const freshPlayersData = freshPlayers.map((p, i) => {
+                    const existing = tState.allPlayers.find(ep => ep.user_id === p.user_id);
+                    return {
+                        user_id: p.user_id,
+                        username: p.profiles?.username || 'Unknown',
+                        rank: p.profiles?.rank || 'Bronze',
+                        score: existing ? existing.score : 0,
+                        status: existing ? existing.status : 'alive',
+                        slot: i + 1
+                    };
+                });
+                tState.players = [...freshPlayersData];
+                tState.allPlayers = [...freshPlayersData];
+                console.log(`🔄 Refreshed player list for TR-${tState.tr_id}: ${tState.players.length} total players.`);
+            }
+        }
+
         if (tState.players.filter(p => p.status === 'alive').length <= 1) return this.finishTournament(tState.id, tState);
 
         tState.matches = []; // Clear previous round matches
