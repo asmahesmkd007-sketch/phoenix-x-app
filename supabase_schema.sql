@@ -153,8 +153,7 @@ CREATE TABLE IF NOT EXISTS kyc_requests (
   nationality     TEXT,
   front_image_url TEXT,
   back_image_url  TEXT,
-  full_im
-  age_url  TEXT,
+  full_image_url  TEXT,
   status          TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   rejection_reason TEXT DEFAULT '',
   created_at      TIMESTAMPTZ DEFAULT NOW(),
