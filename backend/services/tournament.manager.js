@@ -223,7 +223,13 @@ class TournamentManager {
 
         await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
 
-        const pool = tState.players.filter(p => p.status === 'alive').sort(() => Math.random() - 0.5);
+        const rawPool = tState.players.filter(p => p.status === 'alive').sort(() => Math.random() - 0.5);
+        
+        // DE-DUPLICATION: Ensure no player is matched twice
+        const uniquePlayers = new Map();
+        rawPool.forEach(p => { if (!uniquePlayers.has(p.user_id)) uniquePlayers.set(p.user_id, p); });
+        const pool = Array.from(uniquePlayers.values());
+
         if (pool.length <= 1) return this.finishTournament(tState.id, tState);
 
         while (pool.length >= 2) {
