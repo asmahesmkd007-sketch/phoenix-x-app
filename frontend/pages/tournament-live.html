@@ -124,6 +124,20 @@
     #board {
       width: min(500px, 100%);
       margin: 16px 0;
+      border: 4px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    /* Premium Board Theme (Lichess/Chess.com Green) */
+    .paid-tr-arena .white-1e1d7 {
+      background-color: #ebecd0 !important;
+      color: #779556 !important;
+    }
+
+    .paid-tr-arena .black-3c85d {
+      background-color: #779556 !important;
+      color: #ebecd0 !important;
     }
 
     .highlight-selected {
@@ -131,19 +145,40 @@
     }
 
     .highlight-move {
-      background: rgba(91, 192, 235, 0.4) !important;
-      cursor: pointer;
+      position: relative;
     }
 
+    /* The Dot from the user's image - Perfectly Centered */
     .highlight-move::after {
       content: '';
-      display: block;
-      width: 20px;
-      height: 20px;
-      background: rgba(0, 0, 0, 0.2);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 25%;
+      height: 25%;
+      background: rgba(0, 0, 0, 0.15);
       border-radius: 50%;
-      margin: auto;
-      transform: translateY(15px);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Capture Indicator (Ring) */
+    .highlight-capture {
+      position: relative;
+    }
+    .highlight-capture::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 80%;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      z-index: 10;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -164,7 +199,7 @@
         </div>
       </div>
 
-      <div class="page-content" style="height: calc(100vh - 100px); padding-bottom: 20px;">
+      <div class="page-content" id="arena-content" style="height: calc(100vh - 100px); padding-bottom: 20px;">
         <div class="arena-layout">
 
           <!-- SIDE LEADERBOARD PIP -->
@@ -282,6 +317,10 @@
 
       // Initialize Empty Board immediately
       if (!board) {
+        if (tournamentConfig.type === 'paid') {
+           document.getElementById('arena-content').classList.add('paid-tr-arena');
+        }
+
         board = Chessboard('board', {
           draggable: true,
           position: 'start',
@@ -518,7 +557,12 @@
           pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
           onDragStart: onDragStart,
           onDrop: onDrop,
-          onSnapEnd: () => board.position(chess.fen())
+          onMouseoverSquare: onMouseoverSquare,
+          onMouseoutSquare: onMouseoutSquare,
+          onSnapEnd: () => {
+            board.position(chess.fen());
+            removeGreySquares();
+          }
         });
       } else {
         board.orientation(myColor);
@@ -535,13 +579,54 @@
       const turn = chess.turn() === 'w' ? 'white' : 'black';
       if (turn !== myColor) return false;
       if (piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return false;
+      
+      // Highlight moves on drag start
+      onMouseoverSquare(source, piece);
     }
 
     function onDrop(source, target) {
+      removeGreySquares();
       const move = chess.move({ from: source, to: target, promotion: 'q' });
       if (move === null) return 'snapback';
       SocketActions.makeTrMove(matchId, move, user.id);
       updatePlayerBars();
+    }
+
+    function removeGreySquares() {
+      $('#board .square-55d63').removeClass('highlight-move highlight-capture');
+    }
+
+    function greySquare(square, isCapture = false) {
+      const $square = $('#board .square-' + square);
+      if (isCapture) {
+        $square.addClass('highlight-capture');
+      } else {
+        $square.addClass('highlight-move');
+      }
+    }
+
+    function onMouseoverSquare(square, piece) {
+      if (!gameActive) return;
+      
+      // Only show moves for our turn and our pieces
+      const turn = chess.turn() === 'w' ? 'white' : 'black';
+      if (turn !== myColor) return;
+      if (!piece || piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return;
+
+      const moves = chess.moves({
+        square: square,
+        verbose: true
+      });
+
+      if (moves.length === 0) return;
+
+      for (let i = 0; i < moves.length; i++) {
+        greySquare(moves[i].to, moves[i].flags.includes('c'));
+      }
+    }
+
+    function onMouseoutSquare(square, piece) {
+      removeGreySquares();
     }
 
     function updatePlayerBars() {
@@ -596,7 +681,22 @@
       }
       
       document.getElementById('my-score').textContent = `Points: ${myPoints}`;
-      showLobby('Match Over', msg, false, false);
+      
+      // Automatic Redirection for Losers (especially on timeout as requested)
+      if (!won && !isDraw && tournamentConfig?.type === 'paid') {
+          const statusTitle = data.reason === 'timeout' ? 'TIMED OUT ⌛' : 'ELIMINATED 😔';
+          const statusDesc = data.reason === 'timeout' 
+            ? 'You ran out of time! Returning to dashboard...' 
+            : 'You have been eliminated from the tournament. Returning to dashboard...';
+          
+          showLobby(statusTitle, statusDesc, false, false);
+          
+          setTimeout(() => {
+            window.location.href = '/pages/dashboard.html';
+          }, 4000);
+      } else {
+          showLobby('Match Over', msg, false, false);
+      }
 
       setTimeout(() => {
         refreshLeaderboard();
