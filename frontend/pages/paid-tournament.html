@@ -137,18 +137,11 @@
         <div
           style="text-align:center;font-family:var(--font-display);font-size:32px;font-weight:900;color:var(--gold);margin-bottom:12px"
           id="entry-pool">0 Coins</div>
-        <div style="display:flex;gap:10px;justify-content:center">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="prize-container">
+          <!-- Dynamically filled by openEntry() -->
           <div class="prize-badge">
             <div class="pos">1ST</div>
-            <div class="amt" id="prize-1st">0</div>
-          </div>
-          <div class="prize-badge">
-            <div class="pos">2ND</div>
-            <div class="amt" id="prize-2nd">0</div>
-          </div>
-          <div class="prize-badge">
-            <div class="pos">3RD</div>
-            <div class="amt" id="prize-3rd">0</div>
+            <div class="amt">0</div>
           </div>
         </div>
       </div>
@@ -290,9 +283,32 @@
       document.getElementById('entry-t-name').textContent = t.name;
       document.getElementById('entry-t-meta').textContent = `${t.timer_type}min · ${t.current_players}/${t.max_players} players`;
       document.getElementById('entry-pool').textContent = (t.prize_pool || 0).toLocaleString() + ' Coins';
-      document.getElementById('prize-1st').textContent = t.prize_first || 0;
-      document.getElementById('prize-2nd').textContent = t.prize_second || 0;
-      document.getElementById('prize-3rd').textContent = t.prize_third || 0;
+      
+      const prizeContainer = document.getElementById('prize-container');
+      const is32Player = t.max_players === 32;
+      
+      if (is32Player) {
+          const pool = t.prize_pool || 0;
+          const p1 = Math.floor(pool * 0.35);
+          const p2 = Math.floor(pool * 0.25);
+          const p3 = Math.floor(pool * 0.15);
+          const p456 = Math.floor(pool * 0.033);
+          
+          prizeContainer.innerHTML = `
+            <div class="prize-badge"><div class="pos">1ST</div><div class="amt">${p1}</div></div>
+            <div class="prize-badge"><div class="pos">2ND</div><div class="amt">${p2}</div></div>
+            <div class="prize-badge"><div class="pos">3RD</div><div class="amt">${p3}</div></div>
+            <div class="prize-badge"><div class="pos">4TH</div><div class="amt">${p456}</div></div>
+            <div class="prize-badge"><div class="pos">5TH</div><div class="amt">${p456}</div></div>
+            <div class="prize-badge"><div class="pos">6TH</div><div class="amt">${p456}</div></div>
+          `;
+      } else {
+          prizeContainer.innerHTML = `
+            <div class="prize-badge"><div class="pos">1ST</div><div class="amt">${t.prize_first || 0}</div></div>
+            <div class="prize-badge"><div class="pos">2ND</div><div class="amt">${t.prize_second || 0}</div></div>
+            <div class="prize-badge"><div class="pos">3RD</div><div class="amt">${t.prize_third || 0}</div></div>
+          `;
+      }
       document.getElementById('entry-fee-label').textContent = t.entry_fee + ' Coins';
       document.getElementById('entry-balance-label').textContent = userBalance + ' Coins';
       const after = userBalance - t.entry_fee;
