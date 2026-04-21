@@ -68,7 +68,7 @@ class TournamentManager {
         let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
             .order('joined_at', { ascending: true })
-            .limit(t.max_players || 16);
+            .limit(100); // Safety cap of 100 players
         
         if (pError || !players || players.length === 0) return;
 
@@ -77,6 +77,7 @@ class TournamentManager {
             rank: p.profiles?.rank || 'Bronze', score: 0, status: 'alive', slot: i + 1
         }));
 
+        console.log(`📦 TournamentManager: Loaded ${playersData.length} players for TR-${t.tr_id}`);
         this.startTournament(tournamentId, playersData, t);
     }
 
@@ -229,6 +230,8 @@ class TournamentManager {
             const p2 = pool.shift();
             await this.setupMatch(p1, p2, tState);
         }
+
+        console.log(`⚔️ Round ${tState.round} Matches Setup: ${tState.matches.length} matches created for ${tState.players.filter(p => p.status === 'alive').length} alive players.`);
 
         if (pool.length === 1) {
             const pBye = pool[0];
