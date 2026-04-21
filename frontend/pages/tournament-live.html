@@ -315,6 +315,8 @@
 
       sock.emit('join_tournament', { tournamentId });
 
+      tournamentConfig = res.tournament;
+
       // Initialize Empty Board immediately
       if (!board) {
         if (tournamentConfig.type === 'paid') {
@@ -327,11 +329,14 @@
           pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
           onDragStart: onDragStart,
           onDrop: onDrop,
-          onSnapEnd: () => board.position(chess.fen())
+          onMouseoverSquare: onMouseoverSquare,
+          onMouseoutSquare: onMouseoutSquare,
+          onSnapEnd: () => {
+            board.position(chess.fen());
+            removeGreySquares();
+          }
         });
       }
-
-      tournamentConfig = res.tournament;
       document.getElementById('tournament-name').textContent = tournamentConfig.name.toUpperCase();
       matchTimerType = tournamentConfig.timer_type;
 
