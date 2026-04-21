@@ -37,7 +37,7 @@ class TournamentManager {
                         console.log(`🔧 Self-healing TR-${ut.tr_id}: Forcing LOCKED (Actual count: ${count})`);
                         await supabase.from('tournaments').update({ 
                             status: 'full', 
-                            current_players: 16,
+                            current_players: ut.max_players || 16,
                             start_time: new Date(Date.now() + 120000).toISOString() 
                         }).eq('id', ut.id);
                         this.pickupTournament(ut.id).catch(()=>{});
@@ -68,7 +68,7 @@ class TournamentManager {
         let { data: players, error: pError } = await supabase.from('tournament_players')
             .select('*, profiles(username, rank)').eq('tournament_id', tournamentId)
             .order('joined_at', { ascending: true })
-            .limit(16);
+            .limit(t.max_players || 16);
         
         if (pError || !players || players.length === 0) return;
 

@@ -542,9 +542,11 @@
         let statusColor = isEliminated ? '#ff4d4d' : '#5bc0eb';
 
         if (isCompleted) {
+            const is32Player = tournamentConfig?.max_players === 32;
             if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
             else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
             else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
+            else if (is32Player && i < 6) { statusText = `${i + 1}th WINNER 🎖️`; statusColor = '#5bc0eb'; }
             else { statusText = 'ELIMINATED'; statusColor = '#ff4d4d'; }
         }
 
