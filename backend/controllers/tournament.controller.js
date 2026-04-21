@@ -58,7 +58,7 @@ const getTournamentById = async (req, res) => {
 
     let leaderboard = [];
     if (tournament.status === 'completed') {
-      const { data: lb, error: lbError } = await supabase.from('leaderboard').select('*, profiles:user_id(username)').eq('tournament_id', req.params.id).order('rank', { ascending: true });
+      const { data: lb, error: lbError } = await supabase.from('tournament_leaderboard').select('*, profiles:user_id(username)').eq('tournament_id', req.params.id).order('rank', { ascending: true });
       if (lbError) console.error('Leaderboard fetch error:', lbError);
       leaderboard = lb || [];
     }
@@ -154,22 +154,27 @@ const joinTournament = async (req, res) => {
 // ─── AUTO CREATE 1MIN PAID TOURNAMENTS ──────────────────────
 const autoCreatePaidTournaments = async () => {
   try {
-    const entries = [5, 10, 15, 20, 30, 50, 80, 100, 200, 500];
-    const MAX_PLAYERS = 16;
-    const TIMER = 1; // 1 min per player
+    const configs = [
+      { timer: 1, maxPlayers: 16, entries: [5, 10, 15, 20, 30, 50, 80, 100, 200, 500] },
+      { timer: 3, maxPlayers: 32, entries: [5, 10, 15, 20, 30, 50, 80, 100, 200, 500] }
+    ];
     
-    for (const entry of entries) {
-      // Check if an UPCOMING tournament already exists for this entry
-      const { data: existing } = await supabase.from('tournaments')
-        .select('id')
-        .eq('type', 'paid')
-        .eq('timer_type', TIMER)
-        .eq('entry_fee', entry)
-        .eq('status', 'upcoming')
-        .limit(1);
+    for (const config of configs) {
+      const { timer, maxPlayers, entries } = config;
       
-      if (existing && existing.length > 0) continue; // Skip if any upcoming one exists
-        // Generate TR ID (global counter)
+      for (const entry of entries) {
+        // Check if an UPCOMING tournament already exists for this entry/timer
+        const { data: existing } = await supabase.from('tournaments')
+          .select('id')
+          .eq('type', 'paid')
+          .eq('timer_type', timer)
+          .eq('entry_fee', entry)
+          .eq('status', 'upcoming')
+          .limit(1);
+        
+        if (existing && existing.length > 0) continue; 
+
+        // Generate TR ID
         const { data: lastTR } = await supabase.from('tournaments')
           .select('tr_id')
           .eq('type', 'paid')
@@ -185,28 +190,37 @@ const autoCreatePaidTournaments = async () => {
         }
         const trId = `TR-${nextNum}`;
 
-        const pool = entry * MAX_PLAYERS;
-        const prize_first = Math.floor(pool * 0.35);
-        const prize_second = Math.floor(pool * 0.30);
-        const prize_third = Math.floor(pool * 0.20);
+        const pool = entry * maxPlayers;
+        let prize_first, prize_second, prize_third;
+
+        if (maxPlayers === 32) {
+          prize_first = Math.floor(pool * 0.35);
+          prize_second = Math.floor(pool * 0.25);
+          prize_third = Math.floor(pool * 0.15);
+        } else {
+          prize_first = Math.floor(pool * 0.35);
+          prize_second = Math.floor(pool * 0.30);
+          prize_third = Math.floor(pool * 0.20);
+        }
 
         await supabase.from('tournaments').insert({
-          name: `${entry} Coin - 1 Min Knockout TR`,
+          name: `${entry} Coin - ${timer} Min Knockout TR`,
           type: 'paid',
-          timer_type: TIMER,
+          timer_type: timer,
           format: 'standard',
           entry_fee: entry,
-          max_players: MAX_PLAYERS,
+          max_players: maxPlayers,
           status: 'upcoming',
           prize_pool: pool,
           prize_first,
           prize_second,
           prize_third,
           tr_id: trId,
-          start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // Far future, updated when FULL
+          start_time: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           phase: 'upcoming'
         });
-        console.log(`🏆 Created ${trId}: ${entry} Coin - 1 Min Knockout TR`);
+        console.log(`🏆 Created ${trId}: ${entry} Coin - ${timer} Min TR (${maxPlayers}p)`);
+      }
     }
   } catch(e) { console.error('Auto-create paid error:', e); }
 };
@@ -214,19 +228,37 @@ const autoCreatePaidTournaments = async () => {
 // ─── DISTRIBUTE TOURNAMENT PRIZES ───────────────────────────
 const distributeTournamentPrizes = async (tournament) => {
   try {
+    const is32Player = tournament.max_players === 32;
+    const limit = is32Player ? 6 : 3;
+
     const { data: winners } = await supabase.from('tournament_players')
       .select('user_id, score')
       .eq('tournament_id', tournament.id)
       .order('score', { ascending: false })
-      .limit(3);
+      .limit(limit);
+
     if (!winners || winners.length === 0) return;
 
-    const prizes = [tournament.prize_first, tournament.prize_second, tournament.prize_third];
+    let prizes = [];
+    if (is32Player) {
+      const pool = tournament.prize_pool;
+      prizes = [
+        Math.floor(pool * 0.35),  // 1st
+        Math.floor(pool * 0.25),  // 2nd
+        Math.floor(pool * 0.15),  // 3rd
+        Math.floor(pool * 0.033), // 4th
+        Math.floor(pool * 0.033), // 5th
+        Math.floor(pool * 0.033)  // 6th
+      ];
+    } else {
+      prizes = [tournament.prize_first, tournament.prize_second, tournament.prize_third];
+    }
+
     for (let i = 0; i < winners.length; i++) {
         const amount = prizes[i];
         if (amount > 0) {
             // Insert into leaderboard table
-            await supabase.from('leaderboard').insert({
+            await supabase.from('tournament_leaderboard').insert({
                 tournament_id: tournament.id,
                 user_id: winners[i].user_id,
                 rank: i + 1,
