@@ -329,12 +329,17 @@
           pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
           onDragStart: onDragStart,
           onDrop: onDrop,
-          onMouseoverSquare: onMouseoverSquare,
-          onMouseoutSquare: onMouseoutSquare,
           onSnapEnd: () => {
             board.position(chess.fen());
             removeGreySquares();
           }
+        });
+
+        // Click handler for move dots
+        $('#board').on('click', '.square-55d63', function() {
+            const square = $(this).attr('data-square');
+            const p = chess.get(square);
+            onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
         });
       }
       document.getElementById('tournament-name').textContent = tournamentConfig.name.toUpperCase();
@@ -562,12 +567,19 @@
           pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
           onDragStart: onDragStart,
           onDrop: onDrop,
-          onMouseoverSquare: onMouseoverSquare,
-          onMouseoutSquare: onMouseoutSquare,
+          onDragStart: onDragStart,
+          onDrop: onDrop,
           onSnapEnd: () => {
             board.position(chess.fen());
             removeGreySquares();
           }
+        });
+
+        // Click handler for move dots
+        $('#board').on('click', '.square-55d63', function() {
+            const square = $(this).attr('data-square');
+            const p = chess.get(square);
+            onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
         });
       } else {
         board.orientation(myColor);
@@ -610,19 +622,15 @@
       }
     }
 
-    function onMouseoverSquare(square, piece) {
-      if (!gameActive) return;
-      
-      // Only show moves for our turn and our pieces
+    function onSquareClick(square, piece) {
+      removeGreySquares();
+      if (!piece || !gameActive) return;
+
       const turn = chess.turn() === 'w' ? 'white' : 'black';
       if (turn !== myColor) return;
-      if (!piece || piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return;
+      if (piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return;
 
-      const moves = chess.moves({
-        square: square,
-        verbose: true
-      });
-
+      const moves = chess.moves({ square: square, verbose: true });
       if (moves.length === 0) return;
 
       for (let i = 0; i < moves.length; i++) {
@@ -630,8 +638,12 @@
       }
     }
 
+    function onMouseoverSquare(square, piece) {
+      // Disabled in favor of click
+    }
+
     function onMouseoutSquare(square, piece) {
-      removeGreySquares();
+      // Disabled in favor of click
     }
 
     function updatePlayerBars() {
@@ -689,7 +701,7 @@
       
       // Automatic Redirection for Losers (especially on timeout as requested)
       if (!won && !isDraw && tournamentConfig?.type === 'paid') {
-          const statusTitle = data.reason === 'timeout' ? 'TIMED OUT ⌛' : 'ELIMINATED 😔';
+          const statusTitle = 'ELIMINATED 😔';
           const statusDesc = data.reason === 'timeout' 
             ? 'You ran out of time! Returning to dashboard...' 
             : 'You have been eliminated from the tournament. Returning to dashboard...';

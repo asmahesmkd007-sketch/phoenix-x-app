@@ -97,6 +97,7 @@ class TournamentManager {
 
         const tState = {
             id: tournamentId, tr_id: tData.tr_id,
+            type: tData.type,
             players: [...playersData], allPlayers: [...playersData],
             max: tData.max_players, timer: tData.timer_type,
             status: tData.status || 'full', 
@@ -331,27 +332,55 @@ class TournamentManager {
         match.status = 'finished';
         match.result = result;
         match.winnerId = winnerId;
+        match.fen = match.chess.fen();
+
+        const tState = activeTourneys.get(match.tournamentId);
+        const isPaid = tState?.type === 'paid';
+
+        if (isPaid) {
+            // 🏆 HYBRID SCORING CALCULATION (PAID ONLY)
+            const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
+            const calculatePoints = (fen, color) => {
+                const board = fen.split(' ')[0];
+                let pts = 0;
+                const target = color === 'w' ? 'PRNBQ' : 'prnbq';
+                for (const char of board) {
+                    if (target.includes(char)) pts += pieceValues[char.toLowerCase()];
+                }
+                return pts;
+            };
+
+            const p1Pieces = calculatePoints(match.fen, 'w');
+            const p2Pieces = calculatePoints(match.fen, 'b');
+
+            // Result Points: Win=10, Draw=5, Loss=0
+            let p1Result = 0, p2Result = 0;
+            if (result === 'player1_win') { p1Result = 10; p2Result = 0; }
+            else if (result === 'player2_win') { p1Result = 0; p2Result = 10; }
+            else { p1Result = 5; p2Result = 5; }
+
+            match.player1.score = p1Pieces + p1Result;
+            match.player2.score = p2Pieces + p2Result;
+        } else {
+            // STANDARD SCORING (FREE ONLY)
+            match.player1.score = result === 'player1_win' ? 1 : (result === 'draw' ? 0.5 : 0);
+            match.player2.score = result === 'player2_win' ? 1 : (result === 'draw' ? 0.5 : 0);
+        }
 
         // Find and mark the loser as eliminated in tState
         const { userSockets } = require('../socket/socket');
-        const tState = activeTourneys.get(match.tournamentId);
         if (tState) {
-            let actualWinnerId = winnerId;
             let actualLoserId = null;
 
             if (result === 'player1_win') {
-                actualWinnerId = match.player1.userId;
                 actualLoserId = match.player2.userId;
             } else if (result === 'player2_win') {
-                actualWinnerId = match.player2.userId;
                 actualLoserId = match.player1.userId;
             } else if (result === 'draw') {
                 // Randomly advance one in knockout draw
                 if (Math.random() > 0.5) {
-                    actualWinnerId = match.player1.userId;
                     actualLoserId = match.player2.userId;
                 } else {
-                    actualWinnerId = match.player2.userId;
                     actualLoserId = match.player1.userId;
                 }
             }
@@ -374,21 +403,6 @@ class TournamentManager {
         }
 
         supabase.from('matches').update({ result, winner_id: winnerId, status: 'finished', end_time: new Date().toISOString() }).eq('id', matchId).then(()=>{});
-        match.fen = match.chess.fen();
-
-        const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
-        const calcPieces = (fen, color) => {
-            const board = fen.split(' ')[0]; let pts = 0;
-            const target = color === 'w' ? 'PRNBQ' : 'prnbq';
-            for (const c of board) { if (target.includes(c)) pts += pieceValues[c.toLowerCase()]; }
-            return pts;
-        };
-
-        const p1Pts = calcPieces(match.fen, 'w'), p2Pts = calcPieces(match.fen, 'b');
-        let p1R = 0, p2R = 0;
-        if (result === 'player1_win') p1R = 10; else if (result === 'player2_win') p2R = 10; else { p1R = 5; p2R = 5; }
-        match.player1.score += p1Pts + p1R;
-        match.player2.score += p2Pts + p2R;
 
         supabase.from('tournament_players').update({ score: match.player1.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player1.userId).then(()=>{});
         supabase.from('tournament_players').update({ score: match.player2.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player2.userId).then(()=>{});
