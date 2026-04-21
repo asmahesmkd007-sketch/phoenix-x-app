@@ -217,7 +217,8 @@ class TournamentManager {
         
         tState.status = 'live';
         tState.matches = [];
-        const phaseName = tState.players.length === 2 ? 'final' : (tState.players.length === 4 ? 'semifinal' : `round_${tState.round}`);
+        const aliveCount = tState.players.filter(p => p.status === 'alive').length;
+        const phaseName = aliveCount === 2 ? 'final' : (aliveCount === 4 ? 'semifinal' : `round_${tState.round}`);
         tState.phase = phaseName;
 
         await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
