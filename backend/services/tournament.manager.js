@@ -223,7 +223,6 @@ class TournamentManager {
         }
         
         tState.status = 'live';
-        tState.matches = [];
         const aliveCount = tState.players.filter(p => p.status === 'alive').length;
         const phaseName = aliveCount === 2 ? 'final' : (aliveCount === 4 ? 'semifinal' : `round_${tState.round}`);
         tState.phase = phaseName;
@@ -239,45 +238,57 @@ class TournamentManager {
 
         if (pool.length <= 1) return this.finishTournament(tState.id, tState);
 
-        while (pool.length >= 2) {
-            const p1 = pool.shift(); 
-            const p2 = pool.shift();
-            await this.setupMatch(p1, p2, tState);
+        console.log(`🚀 Starting ${phaseName} for TR-${tState.tr_id} with ${pool.length} players`);
+
+        // BULK MATCH CREATION
+        const matchPairs = [];
+        const matchInserts = [];
+        const pairingPool = [...pool];
+
+        while (pairingPool.length >= 2) {
+            const p1 = pairingPool.shift(); 
+            const p2 = pairingPool.shift();
+            matchPairs.push({ p1, p2 });
+            matchInserts.push({
+                player1_id: p1.user_id, player2_id: p2.user_id,
+                match_type: 'tournament', timer_type: tState.timer,
+                tournament_id: tState.id, status: 'active',
+                round: tState.round
+            });
         }
 
-        console.log(`⚔️ Round ${tState.round} Matches Setup: ${tState.matches.length} matches created for ${tState.players.filter(p => p.status === 'alive').length} alive players.`);
+        if (matchInserts.length > 0) {
+            const { data: createdMatches, error } = await supabase.from('matches').insert(matchInserts).select();
+            if (error || !createdMatches) {
+                console.error(`❌ BULK MATCH ERROR for TR-${tState.tr_id}:`, error);
+                return;
+            }
 
-        if (pool.length === 1) {
-            const pBye = pool[0];
+            // Initialize each match in memory
+            createdMatches.forEach((dbMatch, idx) => {
+                const pair = matchPairs[idx];
+                this.initializeMatch(dbMatch, pair.p1, pair.p2, tState);
+            });
+        }
+
+        if (pairingPool.length === 1) {
+            const pBye = pairingPool[0];
             const { userSockets } = require('../socket/socket');
             const s = userSockets.get(pBye.user_id) || new Set();
             s.forEach(sid => this.io.to(sid).emit('tournament_msg', { message: 'You got a BYE! Advancing.' }));
         }
 
+        console.log(`⚔️ ${phaseName} Matches Setup: ${tState.matches.length} matches created.`);
         this.broadcastState(tState.id);
     }
 
-    static async setupMatch(p1, p2, tState) {
-        const { data: matches, error } = await supabase.from('matches').insert({
-            player1_id: p1.user_id, player2_id: p2.user_id,
-            match_type: 'tournament', timer_type: tState.timer,
-            tournament_id: tState.id, status: 'active',
-            round: tState.round
-        }).select();
-
-        if (error || !matches || matches.length === 0) {
-            console.error(`❌ Failed to create match for ${p1.username} vs ${p2.username}:`, error);
-            return;
-        }
-        const dbMatch = matches[0];
-
+    static initializeMatch(dbMatch, p1, p2, tState) {
         const { userSockets } = require('../socket/socket');
         const s1 = userSockets.get(p1.user_id) || new Set();
         const s2 = userSockets.get(p2.user_id) || new Set();
 
         const p1Online = s1.size > 0;
         const p2Online = s2.size > 0;
-        console.log(`🔍 TR Match Setup: ${p1.username}(${p1Online}) vs ${p2.username}(${p2Online})`);
 
         const match = {
             id: dbMatch.id,
