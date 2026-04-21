@@ -148,12 +148,18 @@ class TournamentManager {
                          // this.finishTournament(tId, tState);
                     }
                     if (tState.matches.length > 0) {
-                        const allDone = tState.matches.every(m => m.status === 'finished');
+                        const allDone = tState.matches.every(m => m.status === 'finished' || m.status === 'cancelled');
                         if (allDone && !tState.nextRoundPending) {
                             tState.status = 'rest';
                             tState.countdown = 15;
                             this.processRoundResults(tState);
                             this.broadcastState(tId);
+                        } else if (tState.countdown <= -30) { 
+                            // FAIL-SAFE: Round has been "over" for 30s but matches are stuck
+                            console.log(`⚠️ Force-resolving stuck round in TR-${tState.tr_id}`);
+                            tState.matches.forEach(m => {
+                                if (m.status !== 'finished') this.resolveMatch(m.id, 'draw', null, 'force_close');
+                            });
                         }
                     }
                 }
@@ -175,6 +181,7 @@ class TournamentManager {
                     if (m.connectTimeout <= 0) {
                         const p1Online = m.player1.connected;
                         const p2Online = m.player2.connected;
+                        console.log(`⏰ Connect timeout for match ${m.id}. P1:${p1Online}, P2:${p2Online}`);
                         if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
                         else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
                         else this.resolveMatch(m.id, 'draw', null, 'both_no_show');
