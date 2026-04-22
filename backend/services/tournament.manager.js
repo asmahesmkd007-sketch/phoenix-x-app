@@ -398,16 +398,48 @@ class TournamentManager {
         });
     }
 
+    static calculateMaterialScore(fen, color) {
+        const pieces = fen.split(' ')[0];
+        const values = { 
+            'p': 1, 'r': 2, 'n': 2, 'b': 2, 'q': 5,
+            'P': 1, 'R': 2, 'N': 2, 'B': 2, 'Q': 5
+        };
+        let score = 0;
+        for (const char of pieces) {
+            if (values[char]) {
+                const isWhite = char === char.toUpperCase();
+                if ((color === 'w' && isWhite) || (color === 'b' && !isWhite)) {
+                    score += values[char];
+                }
+            }
+        }
+        return score;
+    }
+
     static async resolveMatch(matchId, result, winnerId, reason) {
         console.log(`🏁 Resolving Match ${matchId} | Reason: ${reason} | Result: ${result}`);
         const match = activeTournamentMatches.get(matchId);
         if (!match || match.status === 'finished') return;
 
         match.status = 'finished';
-        match.result = result;
-        match.winnerId = winnerId;
         match.fen = match.chess.fen();
 
+        // CALCULATE FINAL SCORES
+        const p1Material = this.calculateMaterialScore(match.fen, 'w');
+        const p2Material = this.calculateMaterialScore(match.fen, 'b');
+
+        match.player1.score = p1Material + (result === 'player1_win' ? 10 : 0);
+        match.player2.score = p2Material + (result === 'player2_win' ? 10 : 0);
+
+        // Determine actual winner for bracket progression
+        let actualWinnerId = winnerId;
+        if (!actualWinnerId) {
+            actualWinnerId = (match.player1.score > match.player2.score) ? match.player1.userId :
+                           (match.player2.score > match.player1.score) ? match.player2.userId :
+                           (Math.random() > 0.5 ? match.player1.userId : match.player2.userId);
+        }
+
+        const actualResult = (actualWinnerId === match.player1.userId) ? 'player1_win' : 'player2_win';
         const tState = activeTourneys.get(match.tournamentId);
         const isPaid = tState?.type === 'paid';
 
@@ -442,27 +474,16 @@ class TournamentManager {
         }
 
         // Find and mark the loser as eliminated in tState
-        const { userSockets } = require('../socket/socket');
         if (tState) {
-            let actualLoserId = null;
-
-            if (result === 'player1_win') {
-                actualLoserId = match.player2.userId;
-            } else if (result === 'player2_win') {
-                actualLoserId = match.player1.userId;
-            } else if (result === 'draw') {
-                // Randomly advance one in knockout draw
-                if (Math.random() > 0.5) {
-                    actualLoserId = match.player2.userId;
-                } else {
-                    actualLoserId = match.player1.userId;
-                }
-            }
-
+            const actualLoserId = (actualWinnerId === match.player1.userId) ? match.player2.userId : match.player1.userId;
+            
             if (actualLoserId) {
                 const pIdx = tState.players.findIndex(p => p.user_id === actualLoserId);
                 if (pIdx !== -1) {
                     tState.players[pIdx].status = 'eliminated';
+                    // Update player score in tState for leaderboard
+                    tState.players[pIdx].score += (actualLoserId === match.player1.userId ? match.player1.score : match.player2.score);
+
                     // Notify eliminated player
                     const sockets = userSockets.get(actualLoserId);
                     if (sockets) {
@@ -472,18 +493,31 @@ class TournamentManager {
                         });
                     }
                 }
+                
+                // Update winner score in tState too
+                const wIdx = tState.players.findIndex(p => p.user_id === actualWinnerId);
+                if (wIdx !== -1) {
+                    tState.players[wIdx].score += (actualWinnerId === match.player1.userId ? match.player1.score : match.player2.score);
+                }
             }
             this.broadcastState(tState.id);
         }
 
-        supabase.from('matches').update({ result, winner_id: winnerId, status: 'finished', end_time: new Date().toISOString() }).eq('id', matchId).then(()=>{});
+        supabase.from('matches').update({ 
+            result: actualResult, 
+            winner_id: actualWinnerId, 
+            status: 'finished', 
+            end_time: new Date().toISOString(),
+            player1_score: match.player1.score,
+            player2_score: match.player2.score
+        }).eq('id', matchId).then(()=>{});
 
         supabase.from('tournament_players').update({ score: match.player1.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player1.userId).then(()=>{});
         supabase.from('tournament_players').update({ score: match.player2.score }).eq('tournament_id', match.tournamentId).eq('user_id', match.player2.userId).then(()=>{});
 
         this.broadcastState(match.tournamentId);
         this.io.to(match.roomId).emit('game_over', {
-            result, winnerId, reason, fen: match.fen,
+            result: actualResult, winnerId: actualWinnerId, reason, fen: match.fen,
             p1_score: match.player1.score, p2_score: match.player2.score
         });
         processMatchResult(matchId, result, winnerId, match.fen).catch(() => {});
