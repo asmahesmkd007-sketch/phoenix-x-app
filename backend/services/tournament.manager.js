@@ -516,6 +516,7 @@ class TournamentManager {
                 move: moveData, 
                 fen: match.fen, 
                 turn: match.turn,
+                userId: userId,
                 white_time: match.player1.time,
                 black_time: match.player2.time
             });
