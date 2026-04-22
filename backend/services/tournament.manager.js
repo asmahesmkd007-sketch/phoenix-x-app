@@ -247,7 +247,7 @@ class TournamentManager {
 
         await supabase.from('tournaments').update({ phase: phaseName, status: 'live', round: tState.round }).eq('id', tState.id);
 
-        const rawPool = tState.players.filter(p => p.status === 'alive').sort(() => Math.random() - 0.5);
+        const rawPool = tState.players.filter(p => p.status === 'active').sort(() => Math.random() - 0.5);
         
         // DE-DUPLICATION: Ensure no player is matched twice
         const uniquePlayers = new Map();
