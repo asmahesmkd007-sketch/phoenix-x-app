@@ -260,9 +260,12 @@ class TournamentManager {
         rawPool.forEach(p => { if (!uniquePlayers.has(p.user_id)) uniquePlayers.set(p.user_id, p); });
         const pool = Array.from(uniquePlayers.values());
 
-        if (pool.length <= 1) return this.finishTournament(tState.id, tState);
+        if (pool.length <= 1) {
+            console.log(`⚠️ Pool too small (${pool.length}) for TR-${tState.tr_id}. Finishing.`);
+            return this.finishTournament(tState.id, tState);
+        }
 
-        console.log(`🚀 Starting ${phaseName} for TR-${tState.tr_id} with ${pool.length} players`);
+        console.log(`🚀 Starting ${phaseName} for TR-${tState.tr_id} | Raw Pool: ${rawPool.length} | Unique Pool: ${pool.length}`);
 
         // BULK MATCH CREATION
         const matchPairs = [];
@@ -281,12 +284,15 @@ class TournamentManager {
             });
         }
 
+        console.log(`📦 Attempting bulk insert of ${matchInserts.length} matches for TR-${tState.tr_id}`);
+
         if (matchInserts.length > 0) {
             const { data: createdMatches, error } = await supabase.from('matches').insert(matchInserts).select();
             if (error || !createdMatches) {
                 console.error(`❌ BULK MATCH ERROR for TR-${tState.tr_id}:`, error);
                 return;
             }
+            console.log(`✅ Created ${createdMatches.length} matches for TR-${tState.tr_id}`);
 
             // Initialize each match in memory
             createdMatches.forEach((dbMatch, idx) => {
