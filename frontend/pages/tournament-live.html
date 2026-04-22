@@ -126,7 +126,7 @@
       margin: 16px 0;
       border: 4px solid var(--border);
       border-radius: 8px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     }
 
     /* Premium Board Theme (Lichess/Chess.com Green) */
@@ -141,12 +141,9 @@
     }
 
     .highlight-selected {
-      background-color: rgba(115, 45, 30, 0.7) !important; /* Dark Brown like screenshot */
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-    }
-
-    .highlight-last-move {
-      background-color: rgba(255, 255, 0, 0.3) !important; /* Soft Yellow like chess.com */
+      background-color: rgba(115, 45, 30, 0.7) !important;
+      /* Dark Brown like screenshot */
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
     }
 
     .highlight-move {
@@ -179,27 +176,34 @@
       border-radius: 12px;
       padding: 20px;
       z-index: 2000;
-      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 15px;
     }
-    .promotion-dialog.hidden { display: none; }
+
+    .promotion-dialog.hidden {
+      display: none;
+    }
+
     .promotion-pieces {
       display: flex;
       gap: 20px;
     }
+
     .promotion-piece {
       font-size: 44px;
       cursor: pointer;
       color: white;
       transition: transform 0.2s, color 0.2s;
     }
+
     .promotion-piece:hover {
       transform: scale(1.3);
       color: #5bc0eb;
     }
+
     .promotion-title {
       font-size: 14px;
       color: var(--text-muted);
@@ -211,6 +215,7 @@
     .highlight-capture {
       position: relative;
     }
+
     .highlight-capture::after {
       content: '';
       position: absolute;
@@ -252,9 +257,11 @@
               <div style="font-size: 11px; letter-spacing: 1px; color: var(--text-muted);">TIME REMAINING</div>
               <div class="countdown-timer" id="global-timer">--:--</div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
               <div style="font-weight: 600;">Leaderboard</div>
-              <div id="round-label" style="font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase;">ROUND --</div>
+              <div id="round-label"
+                style="font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase;">ROUND --</div>
             </div>
             <div class="leaderboard-list" id="leaderboard">
               <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Loading...</div>
@@ -265,14 +272,21 @@
           <div class="game-panel">
 
             <!-- ACTIVE GAME UI (Always Visible now) -->
-            <div id="game-arena" style="width:100%; max-width:500px; display:flex; flex-direction:column; align-items:center; position:relative;">
-              
+            <div id="game-arena"
+              style="width:100%; max-width:500px; display:flex; flex-direction:column; align-items:center; position:relative;">
+
               <!-- LOBBY / SEARCH OVERLAY (Now a floating banner) -->
-              <div class="status-overlay" id="lobby-status" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
-                <div id="status-icon" style="font-size: 40px; margin-bottom: 10px;"><i class="fa-solid fa-gamepad"></i></div>
+              <div class="status-overlay" id="lobby-status"
+                style="background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);">
+                <div id="status-icon" style="font-size: 40px; margin-bottom: 10px;"><i class="fa-solid fa-gamepad"></i>
+                </div>
                 <h2 id="status-title" style="margin-bottom: 4px; font-size: 18px;">Entering Arena...</h2>
-                <div id="status-desc" style="color: var(--text-secondary); max-width: 260px; margin-bottom: 15px; font-size: 13px;">Please wait while we set up your match.</div>
-                <div class="spinner" id="search-spinner" style="display:none; width:25px; height:25px; border-width: 3px; margin: 0 auto; margin-bottom:15px;"></div>
+                <div id="status-desc"
+                  style="color: var(--text-secondary); max-width: 260px; margin-bottom: 15px; font-size: 13px;">Please
+                  wait while we set up your match.</div>
+                <div class="spinner" id="search-spinner"
+                  style="display:none; width:25px; height:25px; border-width: 3px; margin: 0 auto; margin-bottom:15px;">
+                </div>
                 <button class="btn btn-primary btn-sm" id="action-btn" style="display:none;">Find Match</button>
               </div>
 
@@ -283,7 +297,9 @@
                     <div style="font-weight:600" id="opp-name">Opponent</div>
                     <div style="font-size:11px;color:var(--text-muted)" id="opp-rating">Waiting...</div>
                   </div>
-                  <div id="opp-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
+                  <div id="opp-captured"
+                    style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px">
+                  </div>
                 </div>
                 <div class="player-timer" id="opp-timer">0:00</div>
               </div>
@@ -309,12 +325,16 @@
                     <div style="font-weight:600" id="my-name">You</div>
                     <div style="font-size:11px;color:var(--text-muted)" id="my-score">Points: 0</div>
                   </div>
-                  <div id="my-captured" style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px"></div>
+                  <div id="my-captured"
+                    style="display:flex;align-items:center;margin-top:2px;font-size:14px;color:var(--text-secondary);min-height:16px">
+                  </div>
                 </div>
                 <div class="player-timer" id="my-timer">0:00</div>
               </div>
 
-              <button class="btn btn-danger btn-sm" id="resign-btn" style="margin-top:20px; align-self:flex-start; display:none;" onclick="resignGame()"><i class="fa-solid fa-flag"></i> Resign Match</button>
+              <button class="btn btn-danger btn-sm" id="resign-btn"
+                style="margin-top:20px; align-self:flex-start; display:none;" onclick="resignGame()"><i
+                  class="fa-solid fa-flag"></i> Resign Match</button>
             </div>
           </div>
         </div>
@@ -377,7 +397,7 @@
       // Initialize Empty Board immediately
       if (!board) {
         if (tournamentConfig.type === 'paid') {
-           document.getElementById('arena-content').classList.add('paid-tr-arena');
+          document.getElementById('arena-content').classList.add('paid-tr-arena');
         }
 
         board = Chessboard('board', {
@@ -393,10 +413,10 @@
         });
 
         // Click handler for move dots
-        $('#board').on('click', '.square-55d63', function() {
-            const square = $(this).attr('data-square');
-            const p = chess.get(square);
-            onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
+        $('#board').on('click', '.square-55d63', function () {
+          const square = $(this).attr('data-square');
+          const p = chess.get(square);
+          onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
         });
       }
       document.getElementById('tournament-name').textContent = tournamentConfig.name.toUpperCase();
@@ -408,121 +428,121 @@
       }
 
       if (tournamentConfig.status === 'upcoming') {
-          startGlobalTimer();
+        startGlobalTimer();
       }
       refreshLeaderboard();
 
       if (tournamentConfig.type === 'paid') {
         setupPaidTournamentLobby();
       } else {
-        startSearching(); 
+        startSearching();
       }
     }
 
     function setupPaidTournamentLobby() {
+      const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
+      if (storedMatch) {
+        sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
+      } else {
+        showLobby('Lobby Waiting Area', 'Tournament starts automatically when full.', false, false);
+      }
+
+      sock.on('connect', () => {
+        console.log('🔄 Socket Reconnected. Checking for active matches...');
         const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
-        if (storedMatch) {
-             sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
-        } else {
-             showLobby('Lobby Waiting Area', 'Tournament starts automatically when full.', false, false);
+        if (storedMatch && user) {
+          sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
         }
+      });
 
-        sock.on('connect', () => {
-             console.log('🔄 Socket Reconnected. Checking for active matches...');
-             const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
-             if (storedMatch && user) {
-                  sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
-             }
-        });
+      sock.on(`tournament_sync_${tournamentId}`, (data) => {
+        state = data; // Update global state
 
-        sock.on(`tournament_sync_${tournamentId}`, (data) => {
-             state = data; // Update global state
-             
-             // Update Global Panel Timer
-             document.getElementById('global-timer').textContent = fmt.countdown(state.countdown);
-             
-             // Update Leaderboard
-             renderLeaderboard(state.players);
+        // Update Global Panel Timer
+        document.getElementById('global-timer').textContent = fmt.countdown(state.countdown);
 
-             if (state.status === 'full') {
-                  showLobby('Tournament Locked', 'All players joined. Starting soon!', true, false);
-                  document.getElementById('status-title').innerHTML = `STARTING IN: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
-             } else if (state.status === 'starting') {
-                  showLobby('Generating Brackets', 'Round 1 starting...', true, false);
-                  document.getElementById('status-title').innerHTML = `STARTING: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
-             } else if (state.status === 'live') {
-                  const roundLabel = `ROUND ${state.round}`;
-                  if (!gameActive) showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
+        // Update Leaderboard
+        renderLeaderboard(state.players);
 
-                  // Match Detection
-                  if (state.matches && state.matches.length > 0) {
-                      const myMatch = state.matches.find(m => m.player1.userId === user.id || m.player2.userId === user.id);
-                      if (myMatch) {
-                          if ((myMatch.status === 'live' || myMatch.status === 'waiting_connect') && !gameActive) {
-                              const color = myMatch.player1.userId === user.id ? 'white' : 'black';
-                              const oppData = color === 'white' ? state.players.find(p => p.user_id === myMatch.player2.userId) : state.players.find(p => p.user_id === myMatch.player1.userId);
-                              matchId = myMatch.id;
-                              localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
-                              
-                              const mTime = color === 'white' ? myMatch.player1.time : myMatch.player2.time;
-                              const oTime = color === 'white' ? myMatch.player2.time : myMatch.player1.time;
-                              setupGame(color, oppData, myMatch.fen || 'start', mTime, oTime);
-                          } else if (myMatch.status === 'finished' && gameActive) {
-                              // Match ended on server, but we are still in game mode. Force exit.
-                              gameActive = false;
-                              clearInterval(timerInterval);
-                              localStorage.removeItem(`px_active_match_${tournamentId}`);
-                              showLobby('Match Over', 'Match concluded. Updating leaderboard...', false, false);
-                              setTimeout(() => refreshLeaderboard(), 2000);
-                          }
-                      }
-                  }
-             } else if (state.status === 'rest') {
-                  showLobby('Round Complete', `Next round in ${state.countdown}s`, false, false);
-                  refreshLeaderboard();
-             } else if (state.status === 'completed') {
-                  if (globalCountdownInterval) clearInterval(globalCountdownInterval);
-                  showLobby('Tournament Ended', 'All rounds completed! Redirecting in 5s...', false, false);
-                  setTimeout(() => {
-                      window.location.href = '/dashboard';
-                  }, 5000);
-             }
-        });
-        
-        sock.on('match_found_tr', (data) => {
-             matchId = data.matchId;
-             localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
-             setupGame(data.color, data.opponent);
-        });
+        if (state.status === 'full') {
+          showLobby('Tournament Locked', 'All players joined. Starting soon!', true, false);
+          document.getElementById('status-title').innerHTML = `STARTING IN: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
+        } else if (state.status === 'starting') {
+          showLobby('Generating Brackets', 'Round 1 starting...', true, false);
+          document.getElementById('status-title').innerHTML = `STARTING: <span style="color:var(--gold)">${fmt.countdown(state.countdown)}</span>`;
+        } else if (state.status === 'live') {
+          const roundLabel = `ROUND ${state.round}`;
+          if (!gameActive) showLobby(`${roundLabel} In Progress`, 'Tournament is live!', true, false);
 
-        sock.on('match_rejoined', (data) => {
-             matchId = data.roomId.replace('tr_', '');
-             const color = data.color;
-             const mTime = color === 'white' ? data.white_time : data.black_time;
-             const oTime = color === 'white' ? data.black_time : data.white_time;
-             setupGame(color, data.opponent, data.fen, mTime, oTime);
-        });
+          // Match Detection
+          if (state.matches && state.matches.length > 0) {
+            const myMatch = state.matches.find(m => m.player1.userId === user.id || m.player2.userId === user.id);
+            if (myMatch) {
+              if ((myMatch.status === 'live' || myMatch.status === 'waiting_connect') && !gameActive) {
+                const color = myMatch.player1.userId === user.id ? 'white' : 'black';
+                const oppData = color === 'white' ? state.players.find(p => p.user_id === myMatch.player2.userId) : state.players.find(p => p.user_id === myMatch.player1.userId);
+                matchId = myMatch.id;
+                localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
 
-        sock.on('tr_timer', (data) => {
-             const timeStr = fmt.countdown(data.countdown);
-             document.getElementById('global-timer').textContent = timeStr;
-             
-             const statusTitle = document.getElementById('status-title');
-             if (statusTitle.innerHTML.includes('STARTING IN')) {
-                  statusTitle.innerHTML = `STARTING IN: <span style="color:var(--gold)">${timeStr}</span>`;
-             } else if (statusTitle.innerHTML.includes('In Progress')) {
-                  // Optional: Update board overlay with tournament time too? 
-                  // For now keep it clean
-             }
-        });
+                const mTime = color === 'white' ? myMatch.player1.time : myMatch.player2.time;
+                const oTime = color === 'white' ? myMatch.player2.time : myMatch.player1.time;
+                setupGame(color, oppData, myMatch.fen || 'start', mTime, oTime);
+              } else if (myMatch.status === 'finished' && gameActive) {
+                // Match ended on server, but we are still in game mode. Force exit.
+                gameActive = false;
+                clearInterval(timerInterval);
+                localStorage.removeItem(`px_active_match_${tournamentId}`);
+                showLobby('Match Over', 'Match concluded. Updating leaderboard...', false, false);
+                setTimeout(() => refreshLeaderboard(), 2000);
+              }
+            }
+          }
+        } else if (state.status === 'rest') {
+          showLobby('Round Complete', `Next round in ${state.countdown}s`, false, false);
+          refreshLeaderboard();
+        } else if (state.status === 'completed') {
+          if (globalCountdownInterval) clearInterval(globalCountdownInterval);
+          showLobby('Tournament Ended', 'All rounds completed! Redirecting in 5s...', false, false);
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 5000);
+        }
+      });
 
-        sock.on('tournament_eliminated', () => {
-             localStorage.removeItem(`px_active_match_${tournamentId}`);
-             showLobby('Eliminated 😔', 'You were knocked out. Redirecting to dashboard...', false, false);
-             setTimeout(() => {
-                  window.location.href = '/pages/dashboard.html';
-             }, 3000);
-        });
+      sock.on('match_found_tr', (data) => {
+        matchId = data.matchId;
+        localStorage.setItem(`px_active_match_${tournamentId}`, matchId);
+        setupGame(data.color, data.opponent);
+      });
+
+      sock.on('match_rejoined', (data) => {
+        matchId = data.roomId.replace('tr_', '');
+        const color = data.color;
+        const mTime = color === 'white' ? data.white_time : data.black_time;
+        const oTime = color === 'white' ? data.black_time : data.white_time;
+        setupGame(color, data.opponent, data.fen, mTime, oTime);
+      });
+
+      sock.on('tr_timer', (data) => {
+        const timeStr = fmt.countdown(data.countdown);
+        document.getElementById('global-timer').textContent = timeStr;
+
+        const statusTitle = document.getElementById('status-title');
+        if (statusTitle.innerHTML.includes('STARTING IN')) {
+          statusTitle.innerHTML = `STARTING IN: <span style="color:var(--gold)">${timeStr}</span>`;
+        } else if (statusTitle.innerHTML.includes('In Progress')) {
+          // Optional: Update board overlay with tournament time too? 
+          // For now keep it clean
+        }
+      });
+
+      sock.on('tournament_eliminated', () => {
+        localStorage.removeItem(`px_active_match_${tournamentId}`);
+        showLobby('Eliminated 😔', 'You were knocked out. Redirecting to dashboard...', false, false);
+        setTimeout(() => {
+          window.location.href = '/pages/dashboard.html';
+        }, 3000);
+      });
     }
 
     function startGlobalTimer() {
@@ -537,40 +557,40 @@
 
     function renderLeaderboard(players) {
       if (!players || !Array.isArray(players) || !user) return;
-      
+
       const myP = players.find(p => (p.user_id?.id || p.user_id) === user.id);
       if (myP) {
         document.getElementById('my-score').textContent = `Rank: ${myP.rank || '--'}`;
       }
 
       if (tournamentConfig && tournamentConfig.round) {
-          document.getElementById('round-label').textContent = `ROUND ${tournamentConfig.round}`;
+        document.getElementById('round-label').textContent = `ROUND ${tournamentConfig.round}`;
       }
 
       const tourneyStatus = tournamentConfig?.status || 'live';
       const isCompleted = tourneyStatus === 'completed';
       const sorted = [...players]
         .sort((a, b) => {
-            if (a.status === 'eliminated' && b.status !== 'eliminated' && !isCompleted) return 1;
-            if (a.status !== 'eliminated' && b.status === 'eliminated' && !isCompleted) return -1;
-            return (b.score || 0) - (a.score || 0);
+          if (a.status === 'eliminated' && b.status !== 'eliminated' && !isCompleted) return 1;
+          if (a.status !== 'eliminated' && b.status === 'eliminated' && !isCompleted) return -1;
+          return (b.score || 0) - (a.score || 0);
         });
 
       const html = sorted.map((p, i) => {
         const name = p.username || p.profiles?.username || 'Player';
         const isMe = (p.user_id?.id || p.user_id) === user.id;
         const isEliminated = p.status === 'eliminated';
-        
+
         let statusText = isEliminated ? 'ELIMINATED' : 'ACTIVE';
         let statusColor = isEliminated ? '#ff4d4d' : '#5bc0eb';
 
         if (isCompleted) {
-            const is32Player = tournamentConfig?.max_players === 32;
-            if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
-            else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
-            else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
-            else if (is32Player && i < 6) { statusText = `${i + 1}th WINNER 🎖️`; statusColor = '#5bc0eb'; }
-            else { statusText = 'ELIMINATED'; statusColor = '#ff4d4d'; }
+          const is32Player = tournamentConfig?.max_players === 32;
+          if (i === 0) { statusText = '1st WINNER 🏆'; statusColor = '#ffd700'; }
+          else if (i === 1) { statusText = '2nd WINNER 🥈'; statusColor = '#c0c0c0'; }
+          else if (i === 2) { statusText = '3rd WINNER 🥉'; statusColor = '#cd7f32'; }
+          else if (is32Player && i < 6) { statusText = `${i + 1}th WINNER 🎖️`; statusColor = '#5bc0eb'; }
+          else { statusText = 'ELIMINATED'; statusColor = '#ff4d4d'; }
         }
 
         const initial = (name && name.length > 0) ? name.replace('@', '')[0].toUpperCase() : '?';
@@ -652,10 +672,10 @@
         });
 
         // Click handler for move dots
-        $('#board').on('click', '.square-55d63', function() {
-            const square = $(this).attr('data-square');
-            const p = chess.get(square);
-            onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
+        $('#board').on('click', '.square-55d63', function () {
+          const square = $(this).attr('data-square');
+          const p = chess.get(square);
+          onSquareClick(square, p ? (p.color + p.type.toUpperCase()) : null);
         });
       } else {
         board.orientation(myColor);
@@ -672,7 +692,7 @@
       const turn = chess.turn() === 'w' ? 'white' : 'black';
       if (turn !== myColor) return false;
       if (piece.charAt(0) !== (myColor === 'white' ? 'w' : 'b')) return false;
-      
+
       // Highlight moves on drag start
       onMouseoverSquare(source, piece);
     }
@@ -682,29 +702,18 @@
 
       // Check for promotion
       if (isPromotionMove(source, target)) {
-          handlePromotion(source, target);
-          return 'snapback'; // snapped back while waiting for selection
+        handlePromotion(source, target);
+        return 'snapback'; // snapped back while waiting for selection
       }
 
       const move = chess.move({ from: source, to: target, promotion: 'q' });
       if (move === null) return 'snapback';
-      highlightLastMove(source, target);
       SocketActions.makeTrMove(matchId, move, user.id);
       updatePlayerBars();
     }
 
     function removeGreySquares() {
       $('#board .square-55d63').removeClass('highlight-move highlight-capture highlight-selected');
-    }
-
-    function removeLastMoveHighlights() {
-      $('#board .square-55d63').removeClass('highlight-last-move');
-    }
-
-    function highlightLastMove(from, to) {
-      removeLastMoveHighlights();
-      $('#board .square-' + from).addClass('highlight-last-move');
-      $('#board .square-' + to).addClass('highlight-last-move');
     }
 
     function greySquare(square, isCapture = false) {
@@ -723,53 +732,52 @@
 
       // 1. If we have a selection and click a target square -> MOVE
       if (selectedSquare && isTarget) {
-          if (isPromotionMove(selectedSquare, square)) {
-              handlePromotion(selectedSquare, square);
-              return;
-          }
+        if (isPromotionMove(selectedSquare, square)) {
+          handlePromotion(selectedSquare, square);
+          return;
+        }
 
-          const move = chess.move({
-              from: selectedSquare,
-              to: square,
-              promotion: 'q'
-          });
+        const move = chess.move({
+          from: selectedSquare,
+          to: square,
+          promotion: 'q'
+        });
 
-          if (move) {
-              board.position(chess.fen());
-              removeGreySquares();
-              highlightLastMove(selectedSquare, square);
-              selectedSquare = null;
-              SocketActions.makeTrMove(matchId, move, user.id);
-              updatePlayerBars();
-              return;
-          }
+        if (move) {
+          board.position(chess.fen());
+          removeGreySquares();
+          selectedSquare = null;
+          SocketActions.makeTrMove(matchId, move, user.id);
+          updatePlayerBars();
+          return;
+        }
       }
 
       // 2. Clear selection if clicking same square or invalid square
       if (selectedSquare === square || (!piece && !isTarget)) {
-          removeGreySquares();
-          selectedSquare = null;
-          return;
+        removeGreySquares();
+        selectedSquare = null;
+        return;
       }
 
       // 3. Select our piece
       if (piece) {
-          const turn = chess.turn() === 'w' ? 'white' : 'black';
-          const isMyPiece = piece.charAt(0) === (myColor === 'white' ? 'w' : 'b');
+        const turn = chess.turn() === 'w' ? 'white' : 'black';
+        const isMyPiece = piece.charAt(0) === (myColor === 'white' ? 'w' : 'b');
 
-          if (turn === myColor && isMyPiece) {
-              removeGreySquares();
-              selectedSquare = square;
-              $('#board .square-' + square).addClass('highlight-selected');
-              
-              const moves = chess.moves({ square: square, verbose: true });
-              if (moves.length === 0) return;
+        if (turn === myColor && isMyPiece) {
+          removeGreySquares();
+          selectedSquare = square;
+          $('#board .square-' + square).addClass('highlight-selected');
 
-              for (let i = 0; i < moves.length; i++) {
-                greySquare(moves[i].to, moves[i].flags.includes('c'));
-              }
-              return;
+          const moves = chess.moves({ square: square, verbose: true });
+          if (moves.length === 0) return;
+
+          for (let i = 0; i < moves.length; i++) {
+            greySquare(moves[i].to, moves[i].flags.includes('c'));
           }
+          return;
+        }
       }
 
       // 4. Default: Clear
@@ -784,7 +792,7 @@
       if (!p || p.type !== 'p') return false;
       if (p.color === 'w' && target[1] !== '8') return false;
       if (p.color === 'b' && target[1] !== '1') return false;
-      
+
       const moves = chess.moves({ square: source, verbose: true });
       return moves.some(m => m.to === target && m.flags.includes('p'));
     }
@@ -793,7 +801,7 @@
       pendingPromotion = { from: source, to: target };
       const dialog = document.getElementById('promotion-dialog');
       dialog.classList.remove('hidden');
-      
+
       if (!dialog.dataset.bound) {
         dialog.querySelectorAll('.promotion-piece').forEach(p => {
           p.onclick = () => {
@@ -806,7 +814,7 @@
 
     function executePromotion(piece) {
       if (!pendingPromotion) return;
-      
+
       const move = chess.move({
         from: pendingPromotion.from,
         to: pendingPromotion.to,
@@ -820,7 +828,7 @@
         SocketActions.makeTrMove(matchId, move, user.id);
         updatePlayerBars();
       }
-      
+
       document.getElementById('promotion-dialog').classList.add('hidden');
       pendingPromotion = null;
     }
@@ -858,14 +866,7 @@
     }
 
     sock.on('move_made', (data) => {
-      if (data.fen) { 
-          chess.load(data.fen); 
-          board.position(data.fen); 
-          updatePlayerBars(); 
-          if (data.move) {
-              highlightLastMove(data.move.from, data.move.to);
-          }
-      }
+      if (data.fen) { chess.load(data.fen); board.position(data.fen); updatePlayerBars(); }
     });
     sock.on('timer_update', (data) => {
       myTime = myColor === 'white' ? data.white_time : data.black_time;
@@ -877,36 +878,36 @@
       gameActive = false;
       clearInterval(timerInterval);
       localStorage.removeItem(`px_active_match_${tournamentId}`);
-      
+
       const won = data.winnerId === user.id;
       const isDraw = data.result === 'draw';
-      
+
       // 🏆 DISPLAY HYBRID SCORES
       const myPoints = myColor === 'white' ? data.p1_score : data.p2_score;
       const oppPoints = myColor === 'white' ? data.p2_score : data.p1_score;
 
       let msg = isDraw ? `Match Drawn. Points: ${myPoints}` : (won ? `You Won! Points: ${myPoints} vs ${oppPoints}` : `You Lost. Points: ${myPoints} vs ${oppPoints}`);
-      
+
       if (data.reason === 'cheat_detected' && won) {
-         msg = "Opponent Banned! You Won!";
+        msg = "Opponent Banned! You Won!";
       }
-      
+
       document.getElementById('my-score').textContent = `Points: ${myPoints}`;
-      
+
       // Automatic Redirection for Losers (especially on timeout as requested)
       if (!won && !isDraw && tournamentConfig?.type === 'paid') {
-          const statusTitle = 'ELIMINATED 😔';
-          const statusDesc = data.reason === 'timeout' 
-            ? 'You ran out of time! Returning to dashboard...' 
-            : 'You have been eliminated from the tournament. Returning to dashboard...';
-          
-          showLobby(statusTitle, statusDesc, false, false);
-          
-          setTimeout(() => {
-            window.location.href = '/pages/dashboard.html';
-          }, 4000);
+        const statusTitle = 'ELIMINATED 😔';
+        const statusDesc = data.reason === 'timeout'
+          ? 'You ran out of time! Returning to dashboard...'
+          : 'You have been eliminated from the tournament. Returning to dashboard...';
+
+        showLobby(statusTitle, statusDesc, false, false);
+
+        setTimeout(() => {
+          window.location.href = '/pages/dashboard.html';
+        }, 4000);
       } else {
-          showLobby('Match Over', msg, false, false);
+        showLobby('Match Over', msg, false, false);
       }
 
       setTimeout(() => {
