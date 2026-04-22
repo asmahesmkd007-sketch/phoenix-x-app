@@ -1,14 +1,17 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 const sendOTPEmail = async (email, otp) => {
+  // Create transporter lazily so it always uses the current env vars
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  console.log(`[MAILER] Sending to: ${email}, using: ${process.env.EMAIL_USER}`);
+
   const mailOptions = {
     from: `"PHOENIX X" <${process.env.EMAIL_USER}>`,
     to: email,
