@@ -96,7 +96,12 @@ app.use('/api/kyc',         require('./routes/kyc.routes'));
 
 // ─── HEALTH CHECK ─────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', platform: 'PHOENIX X', db: 'Supabase', timestamp: new Date() });
+  res.json({ 
+    status: 'ok', 
+    platform: 'PHOENIX X', 
+    version: '1.0.2-fallback-fix',
+    timestamp: new Date() 
+  });
 });
 
 // ─── SOCKET.IO ────────────────────────────────────────────
