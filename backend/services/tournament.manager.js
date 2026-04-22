@@ -112,8 +112,8 @@ class TournamentManager {
         activeTourneys.set(tournamentId, tState);
     }
 
-    static tick() {
-        activeTourneys.forEach((tState, tId) => {
+    static async tick() {
+        for (const [tId, tState] of activeTourneys.entries()) {
             // FULL → Transitions to LIVE
             if (tState.status === 'full') {
                 tState.countdown--;
@@ -121,15 +121,14 @@ class TournamentManager {
 
                 if (tState.countdown <= 0) {
                     // Check if full before transitioning
-                    supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', tId).then(({ count }) => {
-                        if (count >= (tState.max_players || 32)) {
-                            this.transitionToLive(tId).catch(err => console.error('Transition Error:', err));
-                        } else {
-                            // Wait for more players, don't transition yet
-                            console.log(`⏳ TR-${tState.tr_id} at 0:00 but not full. Waiting for players... (${count}/${tState.max_players})`);
-                            tState.countdown = 30; // Reset to 30s
-                        }
-                    });
+                    const { count } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', tId);
+                    if (count >= (tState.max_players || 32)) {
+                        this.transitionToLive(tId).catch(err => console.error('Transition Error:', err));
+                    } else {
+                        // Wait for more players, don't transition yet
+                        console.log(`⏳ TR-${tState.tr_id} at 0:00 but not full. Waiting for players... (${count}/${tState.max_players})`);
+                        tState.countdown = 30; // Reset to 30s
+                    }
                 } else if (tState.countdown % 10 === 0) {
                     this.broadcastState(tId);
                 }
@@ -165,7 +164,6 @@ class TournamentManager {
                     this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
                     if (tState.countdown <= 0) {
                          // Fail-safe: Tournament took too long (10 mins)
-                         // this.finishTournament(tId, tState);
                     }
                     if (tState.matches.length > 0) {
                         const allDone = tState.matches.every(m => m.status === 'finished' || m.status === 'cancelled');
@@ -193,13 +191,7 @@ class TournamentManager {
                     this.nextRound(tState).finally(() => tState.nextRoundPending = false);
                 }
             }
-
-            // Sync Match Timers if they are active
-            tState.matches.forEach(m => {
-                // NO-SHOW TIMEOUT REMOVED as per user request.
-                // Matches will only resolve via 3-min clock or game end.
-            });
-        });
+        }
 
         // Global Match Timer Tick
         activeTournamentMatches.forEach((match, matchId) => {
