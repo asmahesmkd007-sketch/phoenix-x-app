@@ -331,22 +331,28 @@ const forgotPassword = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-    // Save to OTP table
+    // Try to save to OTP table — fall back to in-memory if table missing
     const { error: otpErr } = await supabase.from('otps').upsert({
       email,
       otp,
       expires_at
     }, { onConflict: 'email' });
 
-    if (otpErr) return res.status(400).json({ success: false, message: 'Failed to generate OTP.' });
+    if (otpErr) {
+      console.warn('[AUTH] otps table unavailable, using in-memory fallback:', otpErr.message);
+      if (!global._otpStore) global._otpStore = new Map();
+      global._otpStore.set(email.toLowerCase(), { otp, expires_at });
+    }
 
     // Send Email
+    console.log(`[AUTH] Sending OTP email to: ${email}`);
     await sendOTPEmail(email, otp);
+    console.log(`[AUTH] OTP email sent successfully to: ${email}`);
 
     res.json({ success: true, message: 'OTP sent to your email.' });
   } catch (err) {
     console.error('forgotPassword error:', err);
-    res.status(500).json({ success: false, message: 'Server error.' });
+    res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
 };
 
@@ -355,15 +361,25 @@ const resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
     if (!email || !otp || !newPassword) return res.status(400).json({ success: false, message: 'All fields required.' });
 
-    // Verify OTP
-    const { data: otpData, error: otpErr } = await supabase
+    // Verify OTP — check DB first, then in-memory fallback
+    let otpData = null;
+    const { data: dbOtp, error: otpErr } = await supabase
       .from('otps')
       .select('*')
       .eq('email', email)
       .eq('otp', otp)
       .maybeSingle();
 
-    if (otpErr || !otpData) return res.status(400).json({ success: false, message: 'Invalid or expired OTP.' });
+    if (!otpErr && dbOtp) {
+      otpData = dbOtp;
+    } else if (global._otpStore) {
+      const memOtp = global._otpStore.get(email.toLowerCase());
+      if (memOtp && memOtp.otp === otp) {
+        otpData = memOtp;
+      }
+    }
+
+    if (!otpData) return res.status(400).json({ success: false, message: 'Invalid or expired OTP.' });
 
     // Check expiry
     if (new Date(otpData.expires_at) < new Date()) {
