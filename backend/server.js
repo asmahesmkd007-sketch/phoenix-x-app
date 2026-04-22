@@ -99,7 +99,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     platform: 'PHOENIX X', 
-    version: '1.0.6-resilient-otp',
+    version: '1.0.7-no-user-gate',
     timestamp: new Date() 
   });
 });
