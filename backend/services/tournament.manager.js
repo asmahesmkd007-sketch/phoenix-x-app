@@ -420,8 +420,14 @@ class TournamentManager {
         const p1Material = this.calculateMaterialScore(match.fen, 'w');
         const p2Material = this.calculateMaterialScore(match.fen, 'b');
 
-        match.player1.score = p1Material + (result === 'player1_win' ? 10 : 0);
-        match.player2.score = p2Material + (result === 'player2_win' ? 10 : 0);
+        // Result Points: Win=10, Draw=5, Loss=0
+        let p1Result = 0, p2Result = 0;
+        if (result === 'player1_win') { p1Result = 10; p2Result = 0; }
+        else if (result === 'player2_win') { p1Result = 0; p2Result = 10; }
+        else { p1Result = 5; p2Result = 5; }
+
+        match.player1.score = p1Material + p1Result;
+        match.player2.score = p2Material + p2Result;
 
         // Determine actual winner for bracket progression
         let actualWinnerId = winnerId;
@@ -431,39 +437,9 @@ class TournamentManager {
                            (Math.random() > 0.5 ? match.player1.userId : match.player2.userId);
         }
 
+        match.winnerId = actualWinnerId;
         const actualResult = (actualWinnerId === match.player1.userId) ? 'player1_win' : 'player2_win';
         const tState = activeTourneys.get(match.tournamentId);
-        const isPaid = tState?.type === 'paid';
-
-        if (isPaid) {
-            // 🏆 HYBRID SCORING CALCULATION (PAID ONLY)
-            const pieceValues = { p: 1, r: 2, n: 2, b: 2, q: 5 };
-            const calculatePoints = (fen, color) => {
-                const board = fen.split(' ')[0];
-                let pts = 0;
-                const target = color === 'w' ? 'PRNBQ' : 'prnbq';
-                for (const char of board) {
-                    if (target.includes(char)) pts += pieceValues[char.toLowerCase()];
-                }
-                return pts;
-            };
-
-            const p1Pieces = calculatePoints(match.fen, 'w');
-            const p2Pieces = calculatePoints(match.fen, 'b');
-
-            // Result Points: Win=10, Draw=5, Loss=0
-            let p1Result = 0, p2Result = 0;
-            if (result === 'player1_win') { p1Result = 10; p2Result = 0; }
-            else if (result === 'player2_win') { p1Result = 0; p2Result = 10; }
-            else { p1Result = 5; p2Result = 5; }
-
-            match.player1.score = p1Pieces + p1Result;
-            match.player2.score = p2Pieces + p2Result;
-        } else {
-            // STANDARD SCORING (FREE ONLY)
-            match.player1.score = result === 'player1_win' ? 1 : (result === 'draw' ? 0.5 : 0);
-            match.player2.score = result === 'player2_win' ? 1 : (result === 'draw' ? 0.5 : 0);
-        }
 
         // Find and mark the loser as eliminated in tState
         if (tState) {
