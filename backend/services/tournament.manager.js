@@ -504,7 +504,13 @@ class TournamentManager {
             const moveData = match.chess.move(moveSan);
             if (!moveData) return false;
             match.turn = match.chess.turn(); match.fen = match.chess.fen();
-            this.io.to(match.roomId).emit('move_made', { move: moveData, fen: match.fen, turn: match.turn });
+            this.io.to(match.roomId).emit('move_made', { 
+                move: moveData, 
+                fen: match.fen, 
+                turn: match.turn,
+                white_time: match.player1.time,
+                black_time: match.player2.time
+            });
             if (match.chess.isGameOver()) {
                 const r = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? 'player2_win' : 'player1_win') : 'draw';
                 const w = match.chess.isCheckmate() ? (match.chess.turn() === 'w' ? match.player2.userId : match.player1.userId) : null;
