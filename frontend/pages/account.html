@@ -191,30 +191,34 @@
     .profile-header {
       display: flex;
       align-items: center;
-      gap: 32px;
+      gap: 40px;
       padding: 40px;
-      background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(0, 0, 0, 0.4));
-      border: 1px solid rgba(212, 175, 55, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 24px;
       margin-bottom: 32px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
     }
     .p-avatar-wrap {
       position: relative;
       width: 140px;
       height: 140px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 4px solid var(--gold);
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(212,175,55,0.3);
     }
     .p-avatar {
       width: 100%;
       height: 100%;
-      border-radius: 50%;
-      border: 4px solid var(--gold);
       object-fit: cover;
-      box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
     }
     .p-avatar-edit {
       position: absolute;
-      bottom: 5px;
-      right: 5px;
+      bottom: 8px;
+      right: 8px;
       background: var(--gold);
       color: #000;
       width: 36px;
@@ -225,23 +229,29 @@
       justify-content: center;
       cursor: pointer;
       font-size: 14px;
-      border: 3px solid #000;
+      border: 3px solid #111;
+      z-index: 5;
+    }
+    .p-info {
+      flex: 1;
     }
     .p-info h1 {
       font-family: var(--font-display);
-      font-size: 36px;
+      font-size: 42px;
       font-weight: 900;
       color: #fff;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
     }
     .p-badges {
       display: flex;
       gap: 12px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .p-badge {
-      padding: 4px 14px;
-      border-radius: 20px;
+      padding: 6px 18px;
+      border-radius: 100px;
       font-size: 11px;
       font-weight: 800;
       text-transform: uppercase;
@@ -430,212 +440,139 @@
   <!-- Tesseract OCR for Validation -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    .kyc-form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
+    /* MODERN INPUT SYSTEM */
+    .custom-input-group {
+      margin-bottom: 24px;
     }
 
-    .kyc-full-width {
-      grid-column: span 2;
-    }
-
-    /* Document Selector */
-    .doc-desc {
+    .custom-label {
+      display: block;
       font-size: 11px;
-      color: #888;
-      margin-bottom: 15px;
+      font-weight: 800;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+      opacity: 0.8;
     }
 
+    .custom-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: #fff;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    .custom-input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.05);
+      box-shadow: 0 0 15px rgba(212,175,55,0.1);
+    }
+
+    .custom-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-style: dashed;
+    }
+
+    .pwd-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .pwd-toggle {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      cursor: pointer;
+      transition: color 0.2s;
+      z-index: 5;
+    }
+
+    .pwd-toggle:hover {
+      color: var(--gold);
+    }
+
+    /* ACTION BUTTONS */
+    .btn-save {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s ease;
+      font-family: var(--font-display);
+    }
+
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(212,175,55,0.3);
+    }
+
+    .form-section-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: #fff;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* KYC DOC SELECTOR */
     .doc-selector {
       display: flex;
-      background: #111;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+      gap: 12px;
+      margin-bottom: 32px;
+      background: rgba(255,255,255,0.02);
+      padding: 6px;
+      border-radius: 14px;
       width: fit-content;
-      margin-bottom: 25px;
-      padding: 5px;
     }
 
     .doc-btn {
       background: transparent;
       border: none;
       color: #888;
-      padding: 8px 20px;
-      font-size: 11px;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
-      border-radius: 6px;
-      transition: 0.2s;
+      transition: all 0.2s;
     }
 
     .doc-btn.active {
-      background: rgba(212, 175, 55, 0.1);
-      color: var(--gold);
-    }
-
-    .upload-options {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-
-    .upload-option-btn {
-      flex: 1;
-      background: #111;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #888;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      transition: 0.2s;
-    }
-
-    .upload-option-btn.active {
-      background: rgba(212, 175, 55, 0.1);
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-
-    .upload-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 2px dashed rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      background: #080808;
-      transition: 0.2s;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .upload-area:hover {
-      border-color: var(--gold);
-    }
-
-    .upload-area i {
-      font-size: 24px;
-      color: #555;
-      margin-bottom: 10px;
-    }
-
-    .upload-area span {
-      display: block;
-      font-size: 11px;
-      color: #888;
-    }
-
-    .upload-area.has-file {
-      border-color: #2ecc71;
-      background: rgba(46, 204, 113, 0.05);
-    }
-
-    .upload-area.has-file i {
-      color: #2ecc71;
-    }
-
-    .upload-area.has-file span {
-      color: #2ecc71;
-    }
-
-    .kyc-form-section {
-      display: none;
-    }
-
-    .kyc-form-section.active {
-      display: block;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      background: var(--gold);
+      color: #000;
     }
 
     /* MOBILE RESPONSIVENESS */
     @media (max-width: 768px) {
-      .account-layout {
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      .account-sidebar {
-        width: 100%;
-      }
-
-      .tab-bar {
-        flex-direction: row;
-        overflow-x: auto;
-        padding-bottom: 5px;
-      }
-
-      .tab-btn {
-        flex: 1;
-        justify-content: center;
-        white-space: nowrap;
-        padding: 10px;
-        font-size: 11px;
-      }
-
-      .premium-banner {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
-        padding: 15px;
-      }
-
-      .pb-left {
-        flex-direction: column;
-        text-align: center;
-        gap: 10px;
-      }
-
-      .pb-right {
-        text-align: center;
-        width: 100%;
-      }
-
-      .copy-btn {
-        margin: 10px auto 0;
-      }
-
-      .kyc-form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .kyc-full-width {
-        grid-column: span 1;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .page-title {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
-
-      .mobile-menu-btn {
-        position: absolute;
-        left: 0;
-      }
+      .profile-header { flex-direction: column; text-align: center; gap: 20px; }
+      .p-avatar-wrap { margin: 0 auto; }
+      .p-badges { justify-content: center; }
+      .p-info { width: 100%; }
+      .account-layout { flex-direction: column; }
+      .account-sidebar { width: 100%; }
     }
   </style>
 </head>

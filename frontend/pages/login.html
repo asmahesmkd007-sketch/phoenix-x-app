@@ -348,6 +348,7 @@
       console.log('Opening Forgot Password Modal...');
       const modal = document.getElementById('forgot-modal');
       if (modal) {
+        modal.classList.add('active');
         modal.style.display = 'flex';
         document.getElementById('forgot-step-1').style.display = 'block';
         document.getElementById('forgot-step-2').style.display = 'none';
@@ -356,7 +357,11 @@
       }
     }
     function closeForgotModal() {
-      document.getElementById('forgot-modal').style.display = 'none';
+      const modal = document.getElementById('forgot-modal');
+      if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => { modal.style.display = 'none'; }, 200);
+      }
     }
 
     async function requestOTP() {
