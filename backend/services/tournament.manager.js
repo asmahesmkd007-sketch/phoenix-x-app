@@ -142,20 +142,11 @@ class TournamentManager {
                     if (tState.countdown <= 0 && !tState.nextRoundPending) {
                         tState.nextRoundPending = true;
                         
-                        // STRICT PLAYER COUNT CHECK FOR 32-PLAYER TRs
-                        const { count: currentJoined } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', tId);
-                        
-                        if (currentJoined >= (tState.max_players || 32)) {
-                            tState.phase = 'round_1';
-                            tState.round = 1;
-                            tState.countdown = 600; 
-                            console.log(`🔥 TR-${tState.tr_id} starting with ${currentJoined} players.`);
-                            this.nextRound(tState).finally(() => tState.nextRoundPending = false);
-                        } else {
-                            console.log(`⏳ TR-${tState.tr_id} waiting for more players... (${currentJoined}/${tState.max_players})`);
-                            tState.countdown = 60; // Reset to 60s and wait
-                            tState.nextRoundPending = false;
-                        }
+                        tState.phase = 'round_1';
+                        tState.round = 1;
+                        tState.countdown = 600; 
+                        console.log(`🔥 TR-${tState.tr_id} starting matches.`);
+                        this.nextRound(tState).finally(() => tState.nextRoundPending = false);
                     }
                     if (tState.countdown % 10 === 0) this.broadcastState(tId);
                 } 
