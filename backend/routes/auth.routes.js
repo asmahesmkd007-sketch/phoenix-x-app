@@ -20,5 +20,6 @@ router.get('/me', auth, getMe);
 
 // Forgot Password
 router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/forget-password', authLimiter, forgotPassword); // Fallback for spelling/cache
 router.post('/reset-password', authLimiter, resetPassword);
 module.exports = router;
