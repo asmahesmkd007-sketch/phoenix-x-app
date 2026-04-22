@@ -11,320 +11,331 @@
     body {
       background: var(--bg-primary);
       overflow-x: hidden;
+      color: #fff;
     }
 
-    /* SUBTLE CHESSBOARD BACKGROUND */
+    /* PREMIUM CHESSBOARD BACKGROUND */
     .bg-pattern {
       position: fixed;
       inset: 0;
       background-image: 
-        linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
-      background-size: 60px 60px;
+        linear-gradient(rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+      background-size: 80px 80px;
       z-index: -1;
       pointer-events: none;
     }
 
     .about-container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 100px 24px 60px;
+      padding: 100px 24px 100px;
     }
 
-    /* HERO SECTION */
+    /* HERO */
     .hero {
       text-align: center;
-      margin-bottom: 100px;
-      position: relative;
+      margin-bottom: 120px;
     }
 
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(40px, 8vw, 72px);
+      font-size: clamp(48px, 10vw, 88px);
       font-weight: 900;
-      color: #fff;
-      margin-bottom: 20px;
-      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 24px;
+      background: linear-gradient(to bottom, #fff, #888);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .hero-title span {
-      color: var(--gold);
       display: block;
-      font-size: 0.5em;
-      letter-spacing: 5px;
+      color: var(--gold);
+      -webkit-text-fill-color: var(--gold);
+      font-size: 0.4em;
+      letter-spacing: 8px;
       text-transform: uppercase;
-      margin-top: 10px;
+      margin-top: 20px;
     }
 
     .hero-sub {
       color: var(--text-secondary);
       font-size: 18px;
-      max-width: 600px;
+      max-width: 700px;
       margin: 0 auto;
       line-height: 1.6;
     }
 
-    .floating-piece {
-      font-size: 100px;
+    /* SECTION HEADERS */
+    .section-header {
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
       color: var(--gold);
-      opacity: 0.1;
-      position: absolute;
-      z-index: -1;
-      animation: float 6s ease-in-out infinite;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
     }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-30px) rotate(10deg); }
+    .section-header p {
+      color: var(--text-secondary);
+      font-size: 15px;
     }
 
-    /* MISSION & VISION */
-    .mv-grid {
+    /* GUIDE GRID */
+    .guide-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, 1fr);
       gap: 32px;
       margin-bottom: 100px;
     }
 
-    .glass-card {
-      background: rgba(255, 255, 255, 0.03);
+    .guide-card {
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 24px;
       padding: 40px;
-      backdrop-filter: blur(10px);
-      transition: transform 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
     }
 
-    .glass-card:hover {
+    .guide-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(212, 175, 55, 0.3);
       transform: translateY(-5px);
-      border-color: var(--gold-semi);
     }
 
-    .section-icon {
-      width: 50px;
-      height: 50px;
-      background: var(--gold-semi);
-      border-radius: 12px;
+    .guide-icon {
+      font-size: 32px;
+      color: var(--gold);
+      margin-bottom: 24px;
+      background: rgba(212, 175, 55, 0.1);
+      width: 64px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--gold);
-      font-size: 20px;
-      margin-bottom: 24px;
+      border-radius: 16px;
     }
 
-    .card-title {
+    .guide-card h3 {
       font-family: var(--font-display);
       font-size: 24px;
-      color: #fff;
-      margin-bottom: 16px;
-    }
-
-    .card-text {
-      color: var(--text-secondary);
-      line-height: 1.7;
-      font-size: 15px;
-    }
-
-    /* OFFERINGS GRID */
-    .offer-title {
-      text-align: center;
-      font-family: var(--font-display);
-      font-size: 32px;
-      color: #fff;
-      margin-bottom: 48px;
-    }
-
-    .offer-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 24px;
-      margin-bottom: 100px;
-    }
-
-    .offer-item {
-      text-align: center;
-      padding: 32px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.03);
-    }
-
-    .offer-item i {
-      font-size: 32px;
-      color: var(--gold);
       margin-bottom: 20px;
-    }
-
-    .offer-item h4 {
       color: #fff;
-      margin-bottom: 12px;
-      font-size: 18px;
     }
 
-    .offer-item p {
-      font-size: 13px;
+    .guide-content {
       color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.7;
     }
 
-    /* WHY CHOOSE US */
-    .why-section {
-      background: rgba(212, 175, 55, 0.05);
-      border-radius: 40px;
-      padding: 80px 40px;
-      margin-bottom: 100px;
-      text-align: center;
+    .guide-list {
+      list-style: none;
+      margin-top: 20px;
     }
 
-    .why-grid {
+    .guide-list li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .guide-list li i {
+      color: var(--gold);
+      font-size: 12px;
+    }
+
+    /* BENEFITS BANNER */
+    .benefits-banner {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 32px;
+      padding: 60px;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 40px;
-      margin-top: 60px;
+      margin-bottom: 100px;
+      text-align: center;
     }
 
-    .why-item h5 {
+    .benefit-item i {
+      font-size: 40px;
       color: var(--gold);
-      font-size: 28px;
-      margin-bottom: 8px;
-      font-family: var(--font-display);
+      margin-bottom: 20px;
+      display: block;
     }
 
-    .why-item span {
+    .benefit-item h4 {
+      font-size: 18px;
+      margin-bottom: 8px;
       color: #fff;
-      font-size: 14px;
-      font-weight: 600;
+    }
+
+    .benefit-item span {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     /* CTA */
-    .cta-box {
+    .cta {
       text-align: center;
-      padding: 80px 0;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(20, 20, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 32px;
+      padding: 80px 40px;
+      backdrop-filter: blur(20px);
     }
 
-    .btn-play {
+    .btn-main {
       background: var(--gold);
       color: #000;
-      padding: 18px 48px;
-      border-radius: 12px;
-      font-weight: 800;
-      text-decoration: none;
-      font-family: var(--font-display);
+      padding: 20px 60px;
+      border-radius: 14px;
+      font-weight: 900;
       font-size: 18px;
+      text-decoration: none;
       display: inline-block;
-      transition: all 0.3s ease;
-      box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+      margin-top: 32px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);
     }
 
-    .btn-play:hover {
-      transform: scale(1.05);
-      box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+    .btn-main:hover {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 20px 50px rgba(212, 175, 55, 0.4);
     }
 
-    @media (max-width: 768px) {
-      .mv-grid { grid-template-columns: 1fr; }
-      .why-grid { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 992px) {
+      .guide-grid { grid-template-columns: 1fr; }
+      .benefits-banner { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .benefits-banner { grid-template-columns: 1fr; }
       .about-container { padding-top: 60px; }
+      .hero-title { font-size: 48px; }
     }
   </style>
 </head>
 
 <body>
   <div class="bg-pattern"></div>
-
-  <!-- SIDEBAR CONTAINER -->
   <div id="sidebar-container"></div>
 
   <div class="about-container">
     
-    <!-- HERO -->
-    <section class="hero">
-      <i class="fa-solid fa-chess-knight floating-piece" style="top: -20px; left: 10%;"></i>
-      <i class="fa-solid fa-chess-queen floating-piece" style="top: 40px; right: 5%; animation-delay: -2s"></i>
-      
+    <!-- 1. HERO -->
+    <header class="hero">
       <h1 class="hero-title">
-        Where Strategy <span>Meets Skill</span>
+        The Future <span>Of Digital Chess</span>
       </h1>
       <p class="hero-sub">
-        PHOENIX X is a premium competitive arena designed for chess enthusiasts who value precision, intelligence, and the thrill of the game.
+        PHOENIX X is not just a game; it's a professional ecosystem designed for competitive thinkers, where every move counts and every win is rewarded.
       </p>
-    </section>
+    </header>
 
-    <!-- MISSION & VISION -->
-    <section class="mv-grid">
-      <div class="glass-card">
-        <div class="section-icon"><i class="fa-solid fa-bullseye"></i></div>
-        <h3 class="card-title">Our Mission</h3>
-        <p class="card-text">
-          Our mission is to foster a global community of strategic thinkers. We aim to provide a platform where players of all levels can compete, learn, and sharpen their minds through the timeless art of chess.
-        </p>
-      </div>
-      <div class="glass-card">
-        <div class="section-icon"><i class="fa-solid fa-eye"></i></div>
-        <h3 class="card-title">Our Vision</h3>
-        <p class="card-text">
-          We envision becoming the premier digital hub for professional and recreational chess. By blending modern technology with classic strategy, we strive to elevate the game to new heights of accessibility and excitement.
-        </p>
-      </div>
-    </section>
+    <!-- 2. CORE GUIDE -->
+    <div class="section-header">
+      <h2>Platform Overview</h2>
+      <p>Master the arena with our comprehensive guide.</p>
+    </div>
 
-    <!-- WHAT WE OFFER -->
-    <section>
-      <h2 class="offer-title">What We Offer</h2>
-      <div class="offer-grid">
-        <div class="offer-item">
-          <i class="fa-solid fa-bolt"></i>
-          <h4>Real-time Matches</h4>
-          <p>Experience seamless, low-latency gameplay against opponents worldwide.</p>
-        </div>
-        <div class="offer-item">
-          <i class="fa-solid fa-trophy"></i>
-          <h4>Grand Tournaments</h4>
-          <p>Join paid and free knockout tournaments with massive prize pools.</p>
-        </div>
-        <div class="offer-item">
-          <i class="fa-solid fa-ranking-star"></i>
-          <h4>Leaderboards</h4>
-          <p>Track your progress and climb the global rankings with our IQ-based system.</p>
-        </div>
-        <div class="offer-item">
-          <i class="fa-solid fa-brain"></i>
-          <h4>Practice Modes</h4>
-          <p>Sharpen your opening and endgame strategies with dedicated practice tools.</p>
+    <div class="guide-grid">
+      <!-- TOURNAMENTS -->
+      <div class="guide-card">
+        <div class="guide-icon"><i class="fa-solid fa-trophy"></i></div>
+        <h3>Tournaments</h3>
+        <div class="guide-content">
+          We offer two distinct tournament paths to suit your style:
+          <ul class="guide-list">
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Free Modes:</strong> Practice your skills in 1, 3, or 5-minute formats without any entry fee. Perfect for beginners.</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Paid Arena:</strong> Compete in 16-player knockout brackets with real entry fees and massive prize pools for the top winners.</li>
+          </ul>
         </div>
       </div>
-    </section>
 
-    <!-- WHY CHOOSE US -->
-    <section class="why-section">
-      <h2 class="card-title" style="font-size: 32px">Why Choose PHOENIX X?</h2>
-      <p class="card-text" style="max-width: 600px; margin: 0 auto">The ultimate choice for the modern strategist.</p>
-      
-      <div class="why-grid">
-        <div class="why-item">
-          <h5>Fast</h5>
-          <span>Lag-free engine</span>
-        </div>
-        <div class="why-item">
-          <h5>Fair</h5>
-          <span>Anti-cheat system</span>
-        </div>
-        <div class="why-item">
-          <h5>Secure</h5>
-          <span>Safe transactions</span>
-        </div>
-        <div class="why-item">
-          <h5>Active</h5>
-          <span>Pro community</span>
+      <!-- WALLET & DEPOSITS -->
+      <div class="guide-card">
+        <div class="guide-icon"><i class="fa-solid fa-wallet"></i></div>
+        <h3>Wallet System</h3>
+        <div class="guide-content">
+          Your digital bank on PHOENIX X is secure and lightning fast:
+          <ul class="guide-list">
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Add Funds:</strong> Use UPI, Cards, or NetBanking via our secure Razorpay gateway.</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Auto-Prize:</strong> Winning a match? Your prize money is instantly credited to your wallet balance.</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Fast Withdraw:</strong> Request a withdrawal anytime. Our team processes payouts with 24/7 priority.</li>
+          </ul>
         </div>
       </div>
-    </section>
 
-    <!-- CTA -->
-    <section class="cta-box">
-      <h2 class="offer-title">Ready to Make Your Move?</h2>
-      <a href="/pages/dashboard.html" class="btn-play">JOIN THE GAME</a>
+      <!-- KYC VERIFICATION -->
+      <div class="guide-card">
+        <div class="guide-icon"><i class="fa-solid fa-id-card"></i></div>
+        <h3>KYC Verification</h3>
+        <div class="guide-content">
+          To ensure a fair and legal environment, we use a mandatory verification system:
+          <ul class="guide-list">
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Secure Docs:</strong> Upload Aadhaar, PAN, or Passport for manual verification by our security team.</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlocking:</strong> Fully verified users gain higher withdrawal limits and access to exclusive high-stakes events.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- SECURITY & FAIR PLAY -->
+      <div class="guide-card">
+        <div class="guide-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3>Fair Play Policy</h3>
+        <div class="guide-content">
+          Strategy should be pure. We take security seriously:
+          <ul class="guide-list">
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Anti-Bot:</strong> Real-time move analysis to detect chess engines and unfair assistance.</li>
+            <li><i class="fa-solid fa-circle-check"></i> <strong>Transparency:</strong> All match histories and tournament logs are publicly viewable for verification.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. BENEFITS BANNER -->
+    <div class="benefits-banner">
+      <div class="benefit-item">
+        <i class="fa-solid fa-bolt"></i>
+        <h4>1ms Latency</h4>
+        <span>Engine Speed</span>
+      </div>
+      <div class="benefit-item">
+        <i class="fa-solid fa-lock"></i>
+        <h4>Secure</h4>
+        <span>SSL Protected</span>
+      </div>
+      <div class="benefit-item">
+        <i class="fa-solid fa-headset"></i>
+        <h4>24/7 Care</h4>
+        <span>Direct Support</span>
+      </div>
+      <div class="benefit-item">
+        <i class="fa-solid fa-users"></i>
+        <h4>10k+ Players</h4>
+        <span>Global Reach</span>
+      </div>
+    </div>
+
+    <!-- 4. FINAL CTA -->
+    <section class="cta">
+      <h2 style="font-family: var(--font-display); font-size: 32px;">Ready to Start Your Journey?</h2>
+      <p style="color: var(--text-secondary); margin-top: 12px;">Join thousands of players and prove your strategic dominance today.</p>
+      <a href="/pages/dashboard.html" class="btn-main">GET STARTED NOW</a>
     </section>
 
   </div>
