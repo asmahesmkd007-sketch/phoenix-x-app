@@ -696,210 +696,184 @@
 
               <!-- AADHAAR FORM -->
               <div id="form-aadhaar" class="kyc-form-section active">
-                <div class="kyc-form-grid">
-                  <div class="form-item">
-                    <label class="form-label">AADHAAR NUMBER (12 DIGITS)</label>
-                    <input type="text" id="kyc-aadhaar" class="form-input" placeholder="XXXX XXXX XXXX" maxlength="14"
-                      oninput="formatAadhaar(this)">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px;">
+                  <div class="custom-input-group">
+                    <label class="custom-label">AADHAAR NUMBER (12 DIGITS)</label>
+                    <input type="text" id="kyc-aadhaar" class="custom-input" placeholder="XXXX XXXX XXXX" maxlength="14" oninput="formatAadhaar(this)">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">FULL NAME (AS PER AADHAAR)</label>
-                    <input type="text" id="kyc-name-aadhaar" class="form-input" placeholder="Enter Full Name"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                  <div class="custom-input-group">
+                    <label class="custom-label">FULL NAME (AS PER AADHAAR)</label>
+                    <input type="text" id="kyc-name-aadhaar" class="custom-input" placeholder="Enter Full Name" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">DATE OF BIRTH</label>
-                    <input type="date" id="kyc-dob-aadhaar" class="form-input">
+                  <div class="custom-input-group">
+                    <label class="custom-label">DATE OF BIRTH</label>
+                    <input type="date" id="kyc-dob-aadhaar" class="custom-input">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">PINCODE</label>
-                    <input type="text" id="kyc-pincode" class="form-input" placeholder="6-digit Pincode" maxlength="6"
-                      oninput="fetchPincodeData(this.value)">
+                  <div class="custom-input-group">
+                    <label class="custom-label">PINCODE</label>
+                    <input type="text" id="kyc-pincode" class="custom-input" placeholder="6-digit Pincode" maxlength="6" oninput="fetchPincodeData(this.value)">
                   </div>
-                  <div class="form-item kyc-full-width">
-                    <label class="form-label">ADDRESS LINE 1 (HOUSE NO, STREET)</label>
-                    <input type="text" id="kyc-address1" class="form-input" placeholder="House No, Street Name">
+                  <div class="custom-input-group">
+                    <label class="custom-label">HOUSE NO, STREET</label>
+                    <input type="text" id="kyc-address1" class="custom-input" placeholder="House No, Street Name">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">ADDRESS LINE 2 (CITY/VILLAGE)</label>
-                    <input type="text" id="kyc-address2" class="form-input" placeholder="City or Village">
+                  <div class="custom-input-group">
+                    <label class="custom-label">CITY/VILLAGE</label>
+                    <input type="text" id="kyc-address2" class="custom-input" placeholder="City or Village">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">ADDRESS LINE 3 (DISTRICT & STATE)</label>
-                    <input type="text" id="kyc-address3" class="form-input" placeholder="District, State">
+                  <div class="custom-input-group">
+                    <label class="custom-label">DISTRICT & STATE</label>
+                    <input type="text" id="kyc-address3" class="custom-input" placeholder="District, State">
                   </div>
                 </div>
 
-                <div style="margin-top:20px; margin-bottom:15px;">
-                  <label class="form-label">UPLOAD AADHAAR COPY</label>
-                  <div class="upload-options">
-                    <div class="upload-option-btn active" id="btn-opt-a" onclick="setUploadOption('A')">Front & Back (2
-                      Files)</div>
-                    <div class="upload-option-btn" id="btn-opt-b" onclick="setUploadOption('B')">Full Aadhaar (1 File)
-                    </div>
+                <div style="margin-top:32px;">
+                  <label class="custom-label">UPLOAD AADHAAR COPY</label>
+                  <div class="doc-selector" style="margin-bottom:20px;">
+                    <button class="doc-btn active" id="btn-opt-a" onclick="setUploadOption('A')">Front & Back (2 Files)</button>
+                    <button class="doc-btn" id="btn-opt-b" onclick="setUploadOption('B')">Full Aadhaar (1 File)</button>
                   </div>
 
-                  <div id="upload-opt-a" class="kyc-form-grid">
-                    <label class="upload-area" id="area-front">
-                      <i class="fa-solid fa-id-card"></i>
-                      <span id="lbl-front">Click to upload Front</span>
-                      <input type="file" id="file-front" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-front', 'lbl-front')">
+                  <div id="upload-opt-a" style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                    <label class="upload-area" id="area-front" style="border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                      <i class="fa-solid fa-id-card" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                      <div id="lbl-front" style="font-size:12px; color:var(--text-secondary)">Click to upload Front</div>
+                      <input type="file" id="file-front" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-front', 'lbl-front')">
                     </label>
-                    <label class="upload-area" id="area-back">
-                      <i class="fa-solid fa-id-card-clip"></i>
-                      <span id="lbl-back">Click to upload Back</span>
-                      <input type="file" id="file-back" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-back', 'lbl-back')">
+                    <label class="upload-area" id="area-back" style="border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                      <i class="fa-solid fa-id-card-clip" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                      <div id="lbl-back" style="font-size:12px; color:var(--text-secondary)">Click to upload Back</div>
+                      <input type="file" id="file-back" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-back', 'lbl-back')">
                     </label>
                   </div>
                   <div id="upload-opt-b" style="display:none;">
-                    <label class="upload-area" id="area-full">
-                      <i class="fa-solid fa-file-contract"></i>
-                      <span id="lbl-full">Click to upload Full Aadhaar</span>
-                      <input type="file" id="file-full" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-full', 'lbl-full')">
+                    <label class="upload-area" id="area-full" style="border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                      <i class="fa-solid fa-file-contract" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                      <div id="lbl-full" style="font-size:12px; color:var(--text-secondary)">Click to upload Full Aadhaar</div>
+                      <input type="file" id="file-full" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-full', 'lbl-full')">
                     </label>
-                  </div>
-                  <div style="font-size:10px; color:#888; margin-top:8px;">Max 5MB per file. Allowed: JPG, PNG, PDF.
                   </div>
                 </div>
 
-                <button class="btn-action" onclick="submitKYC('aadhaar')" id="btn-submit-aadhaar">
+                <button class="btn-save" style="margin-top:32px; width:100%; justify-content:center;" onclick="submitKYC('aadhaar')" id="btn-submit-aadhaar">
                   <i class="fa-solid fa-paper-plane"></i> SUBMIT AADHAAR KYC
                 </button>
               </div>
 
               <!-- PAN FORM -->
               <div id="form-pan" class="kyc-form-section">
-                <div class="kyc-form-grid">
-                  <div class="form-item kyc-full-width">
-                    <label class="form-label">PAN NUMBER (10 CHARACTERS)</label>
-                    <input type="text" id="kyc-pan" class="form-input" placeholder="ABCDE1234F" maxlength="10"
-                      oninput="this.value = this.value.toUpperCase()">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px;">
+                  <div class="custom-input-group">
+                    <label class="custom-label">PAN NUMBER (10 CHARACTERS)</label>
+                    <input type="text" id="kyc-pan" class="custom-input" placeholder="ABCDE1234F" maxlength="10" oninput="this.value = this.value.toUpperCase()">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">FULL NAME (AS PER PAN)</label>
-                    <input type="text" id="kyc-name-pan" class="form-input" placeholder="Enter Full Name"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                  <div class="custom-input-group">
+                    <label class="custom-label">FULL NAME (AS PER PAN)</label>
+                    <input type="text" id="kyc-name-pan" class="custom-input" placeholder="Enter Full Name" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">DATE OF BIRTH</label>
-                    <input type="date" id="kyc-dob-pan" class="form-input">
+                  <div class="custom-input-group">
+                    <label class="custom-label">DATE OF BIRTH</label>
+                    <input type="date" id="kyc-dob-pan" class="custom-input">
                   </div>
                 </div>
 
-                <div style="margin-top:20px; margin-bottom:15px;">
-                  <label class="form-label">UPLOAD PAN CARD (FRONT IMAGE ONLY)</label>
-                  <label class="upload-area" id="area-pan" style="max-width:300px">
-                    <i class="fa-solid fa-id-card"></i>
-                    <span id="lbl-pan">Click to upload PAN</span>
-                    <input type="file" id="file-pan" style="display:none" accept=".jpg,.png,.pdf"
-                      onchange="handleFileSelect(this, 'area-pan', 'lbl-pan')">
+                <div style="margin-top:32px;">
+                  <label class="custom-label">UPLOAD PAN CARD (FRONT IMAGE ONLY)</label>
+                  <label class="upload-area" id="area-pan" style="max-width:320px; border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                    <i class="fa-solid fa-id-card" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                    <div id="lbl-pan" style="font-size:12px; color:var(--text-secondary)">Click to upload PAN</div>
+                    <input type="file" id="file-pan" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pan', 'lbl-pan')">
                   </label>
-                  <div style="font-size:10px; color:#888; margin-top:8px;">Max 5MB. Allowed: JPG, PNG, PDF.</div>
                 </div>
 
-                <button class="btn-action" onclick="submitKYC('pan')" id="btn-submit-pan">
+                <button class="btn-save" style="margin-top:32px; width:100%; justify-content:center;" onclick="submitKYC('pan')" id="btn-submit-pan">
                   <i class="fa-solid fa-paper-plane"></i> SUBMIT PAN KYC
                 </button>
               </div>
 
               <!-- PASSPORT FORM -->
               <div id="form-passport" class="kyc-form-section">
-                <div class="kyc-form-grid">
-                  <div class="form-item">
-                    <label class="form-label">PASSPORT NUMBER (ALPHANUMERIC)</label>
-                    <input type="text" id="kyc-passport" class="form-input" placeholder="A1234567" maxlength="9"
-                      oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px;">
+                  <div class="custom-input-group">
+                    <label class="custom-label">PASSPORT NUMBER</label>
+                    <input type="text" id="kyc-passport" class="custom-input" placeholder="A1234567" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">FULL NAME (AS PER PASSPORT)</label>
-                    <input type="text" id="kyc-name-passport" class="form-input" placeholder="Enter Full Name"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                  <div class="custom-input-group">
+                    <label class="custom-label">FULL NAME (AS PER PASSPORT)</label>
+                    <input type="text" id="kyc-name-passport" class="custom-input" placeholder="Enter Full Name" oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">DATE OF BIRTH</label>
-                    <input type="date" id="kyc-dob-passport" class="form-input">
+                  <div class="custom-input-group">
+                    <label class="custom-label">DATE OF BIRTH</label>
+                    <input type="date" id="kyc-dob-passport" class="custom-input">
                   </div>
-                  <div class="form-item">
-                    <label class="form-label">NATIONALITY (OPTIONAL)</label>
-                    <input type="text" id="kyc-nationality" class="form-input" placeholder="e.g. Indian"
-                      oninput="this.value = this.value.replace(/[^A-Za-z\s]/g, '')">
+                  <div class="custom-input-group">
+                    <label class="custom-label">NATIONALITY</label>
+                    <input type="text" id="kyc-nationality" class="custom-input" placeholder="e.g. Indian">
                   </div>
                 </div>
 
-                <div style="margin-top:20px; margin-bottom:15px;">
-                  <label class="form-label">UPLOAD PASSPORT COPY</label>
-                  <div class="upload-options">
-                    <div class="upload-option-btn active" id="btn-opt-pass-a" onclick="setUploadOptionPass('A')">Front &
-                      Back Images</div>
-                    <div class="upload-option-btn" id="btn-opt-pass-b" onclick="setUploadOptionPass('B')">Full Passport
-                      Scan
-                    </div>
+                <div style="margin-top:32px;">
+                  <label class="custom-label">UPLOAD PASSPORT COPY</label>
+                  <div class="doc-selector" style="margin-bottom:20px;">
+                    <button class="doc-btn active" id="btn-opt-pass-a" onclick="setUploadOptionPass('A')">Front & Back Images</button>
+                    <button class="doc-btn" id="btn-opt-pass-b" onclick="setUploadOptionPass('B')">Full Passport Scan</button>
                   </div>
 
-                  <div id="upload-opt-pass-a" class="kyc-form-grid">
-                    <label class="upload-area" id="area-pass-front">
-                      <i class="fa-solid fa-id-card"></i>
-                      <span id="lbl-pass-front">Upload Front Page (Mandatory)</span>
-                      <input type="file" id="file-pass-front" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-pass-front', 'lbl-pass-front')">
+                  <div id="upload-opt-pass-a" style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                    <label class="upload-area" id="area-pass-front" style="border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                      <i class="fa-solid fa-id-card" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                      <div id="lbl-pass-front" style="font-size:12px; color:var(--text-secondary)">Upload Front Page (Mandatory)</div>
+                      <input type="file" id="file-pass-front" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pass-front', 'lbl-pass-front')">
                     </label>
-                    <label class="upload-area" id="area-pass-back">
-                      <i class="fa-solid fa-id-card-clip"></i>
-                      <span id="lbl-pass-back">Upload Back Page (Optional)</span>
-                      <input type="file" id="file-pass-back" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-pass-back', 'lbl-pass-back')">
+                    <label class="upload-area" id="area-pass-back" style="border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                      <i class="fa-solid fa-id-card-clip" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                      <div id="lbl-pass-back" style="font-size:12px; color:var(--text-secondary)">Upload Back Page (Optional)</div>
+                      <input type="file" id="file-pass-back" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pass-back', 'lbl-pass-back')">
                     </label>
                   </div>
                   <div id="upload-opt-pass-b" style="display:none;">
-                    <label class="upload-area" id="area-pass-full">
-                      <i class="fa-solid fa-file-contract"></i>
-                      <span id="lbl-pass-full">Upload Full Scan (Mandatory)</span>
-                      <input type="file" id="file-pass-full" style="display:none" accept=".jpg,.png,.pdf"
-                        onchange="handleFileSelect(this, 'area-pass-full', 'lbl-pass-full')">
+                    <label class="upload-area" id="area-pass-full" style="border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02);">
+                      <i class="fa-solid fa-file-contract" style="font-size:32px; color:rgba(255,255,255,0.2); margin-bottom:12px;"></i>
+                      <div id="lbl-pass-full" style="font-size:12px; color:var(--text-secondary)">Click to upload Full Passport Scan</div>
+                      <input type="file" id="file-pass-full" style="display:none" accept=".jpg,.png,.pdf" onchange="handleFileSelect(this, 'area-pass-full', 'lbl-pass-full')">
                     </label>
-                  </div>
-                  <div style="font-size:10px; color:#888; margin-top:8px;">Max 5MB per file. Allowed: JPG, PNG, PDF.
                   </div>
                 </div>
 
-                <button class="btn-action" onclick="submitKYC('passport')" id="btn-submit-passport">
+                <button class="btn-save" style="margin-top:32px; width:100%; justify-content:center;" onclick="submitKYC('passport')" id="btn-submit-passport">
                   <i class="fa-solid fa-paper-plane"></i> SUBMIT PASSPORT KYC
                 </button>
               </div>
             </div>
 
-            <!-- 5. STATISTICS SECTION -->
-            <div class="section-card" id="pane-stats">
-              <div class="section-header">GAMING STATISTICS</div>
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <div class="stat-label">IQ LEVEL</div>
-                  <div class="stat-value" id="stat-iq">145</div>
+            <!-- GAMING STATISTICS (Unified at bottom) -->
+            <div class="glass-card" id="global-stats" style="margin-top:32px;">
+              <div class="form-section-title">
+                Gaming Performance
+                <div style="font-size:11px; font-weight:400; color:var(--gold)" id="stat-winrate-top">45% WIN RATE</div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:20px;">
+                <div style="background:rgba(255,255,255,0.02); padding:24px; border-radius:20px; text-align:center; border:1px solid rgba(255,255,255,0.05)">
+                  <div style="font-size:10px; color:#666; margin-bottom:12px; letter-spacing:1px; text-transform:uppercase">IQ Level</div>
+                  <div id="stat-iq-global" style="font-size:32px; font-weight:900; color:#fff">145</div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-label">TOTAL MATCHES</div>
-                  <div class="stat-value" id="stat-matches">11</div>
+                <div style="background:rgba(255,255,255,0.02); padding:24px; border-radius:20px; text-align:center; border:1px solid rgba(255,255,255,0.05)">
+                  <div style="font-size:10px; color:#666; margin-bottom:12px; letter-spacing:1px; text-transform:uppercase">Matches</div>
+                  <div id="stat-matches-global" style="font-size:32px; font-weight:900; color:#fff">11</div>
                 </div>
-                <div class="stat-item">
-                  <div class="stat-label">WIN RATE</div>
-                  <div class="stat-value" id="stat-winrate">45%</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">BEST STREAK</div>
-                  <div class="stat-value blue" id="stat-streak">2</div>
+                <div style="background:rgba(255,255,255,0.02); padding:24px; border-radius:20px; text-align:center; border:1px solid rgba(255,255,255,0.05)">
+                  <div style="font-size:10px; color:#666; margin-bottom:12px; letter-spacing:1px; text-transform:uppercase">Best Streak</div>
+                  <div id="stat-streak-global" style="font-size:32px; font-weight:900; color:var(--gold)">2</div>
                 </div>
               </div>
-
-              <div class="progress-box">
-                <div class="progress-info">
-                  <span>Win Rate Progress</span>
-                  <span id="prog-val">45%</span>
+              
+              <div style="margin-top:32px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px; color:#666; font-weight:800">
+                  <span>WIN RATE PROGRESS</span>
+                  <span id="stat-winrate-label">45%</span>
                 </div>
-                <div class="progress-track">
-                  <div class="progress-fill" id="prog-fill" style="width: 45%"></div>
+                <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:100px; overflow:hidden">
+                  <div id="stat-winrate-bar" style="height:100%; background:var(--gold); width:45%; box-shadow:0 0 15px var(--gold)"></div>
                 </div>
               </div>
             </div>
@@ -978,31 +952,29 @@
         document.getElementById('pb-rank').textContent = u.rank || 'Bronze';
         document.getElementById('pb-iq').textContent = u.iq_level || 145;
 
+        // KYC Badge Logic
         const badge = document.getElementById('pb-kyc-badge');
+        const kycMsg = document.getElementById('kyc-status-msg');
         if (u.kyc_status === 'verified') {
-          badge.style.display = 'flex';
-          document.getElementById('kyc-status-msg').innerHTML = '<i class="fa-solid fa-check-circle"></i> Your KYC is fully verified.';
-          document.getElementById('btn-submit-aadhaar').style.display = 'none';
-          document.getElementById('btn-submit-pan').style.display = 'none';
-          document.getElementById('btn-submit-passport').style.display = 'none';
+          if (badge) badge.style.display = 'flex';
+          if (kycMsg) kycMsg.innerHTML = '<i class="fa-solid fa-check-circle"></i> Your KYC is fully verified.';
         } else if (u.kyc_status === 'pending') {
-          document.getElementById('kyc-status-msg').innerHTML = '<i class="fa-solid fa-clock"></i> Your KYC is under review.';
-          document.getElementById('btn-submit-aadhaar').style.display = 'none';
-          document.getElementById('btn-submit-pan').style.display = 'none';
-          document.getElementById('btn-submit-passport').style.display = 'none';
+          if (kycMsg) kycMsg.innerHTML = '<i class="fa-solid fa-clock"></i> Your KYC is under review.';
         } else if (u.kyc_status === 'rejected') {
           const reason = u.kyc_rejection_reason || 'Details not matching';
-          document.getElementById('kyc-status-msg').innerHTML = `<i class="fa-solid fa-circle-xmark" style="color:#e74c3c"></i> KYC Rejected: ${reason}. Please re-submit correctly.`;
-          document.getElementById('btn-submit-aadhaar').style.display = 'flex';
-          document.getElementById('btn-submit-pan').style.display = 'flex';
-          document.getElementById('btn-submit-passport').style.display = 'flex';
-        } else {
-          // not_verified
-          document.getElementById('kyc-status-msg').textContent = '';
-          document.getElementById('btn-submit-aadhaar').style.display = 'flex';
-          document.getElementById('btn-submit-pan').style.display = 'flex';
-          document.getElementById('btn-submit-passport').style.display = 'flex';
+          if (kycMsg) kycMsg.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color:#e74c3c"></i> KYC Rejected: ${reason}. Please re-submit.`;
         }
+
+        // Global Stats Section Sync
+        const stats = s.success ? s.stats : {};
+        if (document.getElementById('stat-iq-global')) document.getElementById('stat-iq-global').textContent = u.iq_level || 145;
+        if (document.getElementById('stat-matches-global')) document.getElementById('stat-matches-global').textContent = stats.total_matches || 11;
+        if (document.getElementById('stat-streak-global')) document.getElementById('stat-streak-global').textContent = stats.best_streak || 2;
+        
+        const winRate = stats.win_rate || 45;
+        if (document.getElementById('stat-winrate-top')) document.getElementById('stat-winrate-top').textContent = winRate + '% WIN RATE';
+        if (document.getElementById('stat-winrate-label')) document.getElementById('stat-winrate-label').textContent = winRate + '%';
+        if (document.getElementById('stat-winrate-bar')) document.getElementById('stat-winrate-bar').style.width = winRate + '%';
 
         if (u.profile_image) {
           const img = `<img src="${u.profile_image}">`;
@@ -1013,16 +985,6 @@
         document.getElementById('edit-fullname').value = u.full_name || '';
         document.getElementById('edit-email').value = u.email || 'undefined';
         document.getElementById('edit-phone').value = u.phone || '';
-        if (typeof updateSidebarUI === 'function') updateSidebarUI(u);
-      }
-      if (s.success) {
-        const st = s.stats;
-        document.getElementById('stat-iq').textContent = st.iq_level || 145;
-        document.getElementById('stat-matches').textContent = st.total_matches || 11;
-        document.getElementById('stat-winrate').textContent = (st.win_rate || 45) + '%';
-        document.getElementById('stat-streak').textContent = st.best_streak || 2;
-        document.getElementById('prog-val').textContent = (st.win_rate || 45) + '%';
-        document.getElementById('prog-fill').style.width = (st.win_rate || 45) + '%';
       }
     }
 
@@ -1032,12 +994,10 @@
 
       document.getElementById('pane-profile').style.display = 'none';
       document.getElementById('pane-kyc').style.display = 'none';
-      document.getElementById('pane-stats').style.display = 'none';
       if (document.getElementById('pane-security')) document.getElementById('pane-security').style.display = 'none';
 
       if (tabName === 'profile') {
         document.getElementById('pane-profile').style.display = 'block';
-        document.getElementById('pane-stats').style.display = 'block';
       } else if (tabName === 'kyc') {
         document.getElementById('pane-kyc').style.display = 'block';
       } else if (tabName === 'security') {
