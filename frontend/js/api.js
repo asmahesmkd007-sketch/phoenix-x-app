@@ -1,7 +1,8 @@
-// ─── CONFIG ──────────────────────────────────────────────
-const API_BASE = (window.location.port === '5500' || window.location.port === '3000') 
-  ? 'http://localhost:5000/api' 
-  : '/api';
+const isLocal = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1' || 
+                window.location.port !== '';
+
+const API_BASE = isLocal ? `http://${window.location.hostname}:5000/api` : '/api';
 
 // ─── FORMAT HELPERS ───────────────────────────────────────
 const fmt = {
@@ -44,7 +45,7 @@ const clearSession = () => {
 
 let _refreshing = false;
 
-const api = async (endpoint, options = {}, retry = true) => {
+const api = async (endpoint, options = {}, retry = true, attempt = 1) => {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -56,7 +57,7 @@ const api = async (endpoint, options = {}, retry = true) => {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : undefined,
     });
 
     // Token expired → try refresh once
@@ -74,7 +75,14 @@ const api = async (endpoint, options = {}, retry = true) => {
     const data = await res.json();
     return data;
   } catch (err) {
-    console.error(`API Error [${endpoint}]:`, err);
+    console.error(`API Error [${endpoint}] (Attempt ${attempt}):`, err);
+    
+    // Auto-retry on network failure (max 3 attempts)
+    if (attempt < 3) {
+        await new Promise(r => setTimeout(r, 1500));
+        return api(endpoint, options, retry, attempt + 1);
+    }
+    
     return { success: false, message: 'Network error. Check connection.' };
   }
 };
