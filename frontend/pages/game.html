@@ -801,7 +801,9 @@ sock.on('move_made', (data) => {
     setTimeout(updateLastMoveHighlight, 250);
   }
   if (data.move) { 
-    addMoveToList(data.move.san); 
+    if (data.userId !== user.id) {
+      addMoveToList(data.move.san); 
+    }
     removeHighlights(); 
   }
   updatePlayerBar();

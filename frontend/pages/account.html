@@ -1082,7 +1082,7 @@
         if (fileInput.files[0]) formData.append('avatar', fileInput.files[0]);
 
         // Using fetch directly because 'api' helper might not handle FormData automatically
-        const res = await fetch(`${API_URL}/user/update-profile`, {
+        const res = await fetch(`${API_BASE}/user/update-profile`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${getToken()}` },
           body: formData
