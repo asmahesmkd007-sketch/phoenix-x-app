@@ -120,7 +120,16 @@ class TournamentManager {
                 this.io.to(`tournament_${tId}`).emit('tr_timer', { countdown: tState.countdown });
 
                 if (tState.countdown <= 0) {
-                    this.transitionToLive(tId).catch(err => console.error('Transition Error:', err));
+                    // Check if full before transitioning
+                    supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', tId).then(({ count }) => {
+                        if (count >= (tState.max_players || 32)) {
+                            this.transitionToLive(tId).catch(err => console.error('Transition Error:', err));
+                        } else {
+                            // Wait for more players, don't transition yet
+                            console.log(`⏳ TR-${tState.tr_id} at 0:00 but not full. Waiting for players... (${count}/${tState.max_players})`);
+                            tState.countdown = 30; // Reset to 30s
+                        }
+                    });
                 } else if (tState.countdown % 10 === 0) {
                     this.broadcastState(tId);
                 }
@@ -584,6 +593,15 @@ class TournamentManager {
     static async transitionToLive(tournamentId) {
         const tState = activeTourneys.get(tournamentId);
         if (!tState || tState.status === 'live') return;
+
+        // FINAL CAPACITY CHECK BEFORE GOING LIVE
+        const { count } = await supabase.from('tournament_players').select('*', { count: 'exact', head: true }).eq('tournament_id', tournamentId);
+        if (count < (tState.max_players || 32)) {
+            console.log(`🚫 Refusing to transition TR-${tState.tr_id} to live: Not full (${count}/${tState.max_players})`);
+            tState.status = 'upcoming'; // Revert or stay in upcoming
+            tState.countdown = 60; // Reset countdown
+            return;
+        }
 
         // Update memory immediately to prevent re-entry
         tState.status = 'live';
