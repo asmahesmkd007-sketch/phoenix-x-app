@@ -10,6 +10,8 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+const r1 = express.Router();
+
 r1.post('/feedback', auth, fc.submitFeedback);
 r1.post('/report', auth, rc.submitReport);
 r1.get('/profile', auth, uc.getProfile);
