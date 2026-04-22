@@ -1064,15 +1064,20 @@
     }
 
     async function saveProfile() {
-      const username = document.getElementById('edit-username').value.replace('@', '');
-      const full_name = document.getElementById('edit-fullname').value;
-      const phone = document.getElementById('edit-phone').value;
+      const username = document.getElementById('edit-username').value.replace('@', '').trim();
+      const full_name = document.getElementById('edit-fullname').value.trim();
+      const phone = document.getElementById('edit-phone').value.trim();
       const fileInput = document.getElementById('file-upload');
       
       const btn = document.querySelector('#pane-profile .btn-action');
+      if (!btn) return;
+
       const originalText = btn.innerHTML;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
       btn.disabled = true;
+
+      const baseUrl = (typeof API_BASE !== 'undefined') ? API_BASE : 
+                       (window.location.port === '5500' || window.location.port === '3000' ? 'http://localhost:5000/api' : '/api');
 
       try {
         const formData = new FormData();
@@ -1081,29 +1086,27 @@
         formData.append('phone', phone);
         if (fileInput.files[0]) formData.append('avatar', fileInput.files[0]);
 
-        // Robust API Base detection
-        const baseUrl = (typeof API_BASE !== 'undefined') ? API_BASE : 
-                       (window.location.port === '5500' || window.location.port === '3000' ? 'http://localhost:5000/api' : '/api');
-
         const res = await fetch(`${baseUrl}/user/update-profile`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${getToken()}` },
-          body: formData
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+            body: formData
         });
+
         const data = await res.json();
-        
         if (data.success) {
-           Toast.success('Profile updated successfully!');
-           loadProfileData();
+            Toast.success('Profile updated successfully!');
+            setSession(getToken(), getRefreshToken(), data.user);
+            setTimeout(() => window.location.reload(), 1500);
         } else {
-           Toast.error(data.message || 'Update failed');
+            Toast.error(data.message || 'Update failed');
         }
-      } catch (e) {
-        Toast.error('Network Error');
+      } catch (err) {
+          console.error('Save Profile Error:', err);
+          Toast.error(`Connection Failed: Unable to reach ${baseUrl}. Please ensure the server is running.`);
+      } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
       }
-      
-      btn.innerHTML = originalText;
-      btn.disabled = false;
     }
 
     /* KYC LOGIC */
