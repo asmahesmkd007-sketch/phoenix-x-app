@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us | PHOENIX X</title>
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: var(--bg-primary);
+      overflow-x: hidden;
+    }
+
+    /* SUBTLE CHESSBOARD BACKGROUND */
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .about-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 100px 24px 60px;
+    }
+
+    /* HERO SECTION */
+    .hero {
+      text-align: center;
+      margin-bottom: 100px;
+      position: relative;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 8vw, 72px);
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+
+    .hero-title span {
+      color: var(--gold);
+      display: block;
+      font-size: 0.5em;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+
+    .hero-sub {
+      color: var(--text-secondary);
+      font-size: 18px;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .floating-piece {
+      font-size: 100px;
+      color: var(--gold);
+      opacity: 0.1;
+      position: absolute;
+      z-index: -1;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(10deg); }
+    }
+
+    /* MISSION & VISION */
+    .mv-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 100px;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease;
+    }
+
+    .glass-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--gold-semi);
+    }
+
+    .section-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--gold-semi);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 20px;
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .card-text {
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* OFFERINGS GRID */
+    .offer-title {
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 32px;
+      color: #fff;
+      margin-bottom: 48px;
+    }
+
+    .offer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-bottom: 100px;
+    }
+
+    .offer-item {
+      text-align: center;
+      padding: 32px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .offer-item i {
+      font-size: 32px;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+
+    .offer-item h4 {
+      color: #fff;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .offer-item p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* WHY CHOOSE US */
+    .why-section {
+      background: rgba(212, 175, 55, 0.05);
+      border-radius: 40px;
+      padding: 80px 40px;
+      margin-bottom: 100px;
+      text-align: center;
+    }
+
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 40px;
+      margin-top: 60px;
+    }
+
+    .why-item h5 {
+      color: var(--gold);
+      font-size: 28px;
+      margin-bottom: 8px;
+      font-family: var(--font-display);
+    }
+
+    .why-item span {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* CTA */
+    .cta-box {
+      text-align: center;
+      padding: 80px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-play {
+      background: var(--gold);
+      color: #000;
+      padding: 18px 48px;
+      border-radius: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      font-family: var(--font-display);
+      font-size: 18px;
+      display: inline-block;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+    }
+
+    .btn-play:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .mv-grid { grid-template-columns: 1fr; }
+      .why-grid { grid-template-columns: 1fr 1fr; }
+      .about-container { padding-top: 60px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-pattern"></div>
+
+  <!-- SIDEBAR CONTAINER -->
+  <div id="sidebar-container"></div>
+
+  <div class="about-container">
+    
+    <!-- HERO -->
+    <section class="hero">
+      <i class="fa-solid fa-chess-knight floating-piece" style="top: -20px; left: 10%;"></i>
+      <i class="fa-solid fa-chess-queen floating-piece" style="top: 40px; right: 5%; animation-delay: -2s"></i>
+      
+      <h1 class="hero-title">
+        Where Strategy <span>Meets Skill</span>
+      </h1>
+      <p class="hero-sub">
+        PHOENIX X is a premium competitive arena designed for chess enthusiasts who value precision, intelligence, and the thrill of the game.
+      </p>
+    </section>
+
+    <!-- MISSION & VISION -->
+    <section class="mv-grid">
+      <div class="glass-card">
+        <div class="section-icon"><i class="fa-solid fa-bullseye"></i></div>
+        <h3 class="card-title">Our Mission</h3>
+        <p class="card-text">
+          Our mission is to foster a global community of strategic thinkers. We aim to provide a platform where players of all levels can compete, learn, and sharpen their minds through the timeless art of chess.
+        </p>
+      </div>
+      <div class="glass-card">
+        <div class="section-icon"><i class="fa-solid fa-eye"></i></div>
+        <h3 class="card-title">Our Vision</h3>
+        <p class="card-text">
+          We envision becoming the premier digital hub for professional and recreational chess. By blending modern technology with classic strategy, we strive to elevate the game to new heights of accessibility and excitement.
+        </p>
+      </div>
+    </section>
+
+    <!-- WHAT WE OFFER -->
+    <section>
+      <h2 class="offer-title">What We Offer</h2>
+      <div class="offer-grid">
+        <div class="offer-item">
+          <i class="fa-solid fa-bolt"></i>
+          <h4>Real-time Matches</h4>
+          <p>Experience seamless, low-latency gameplay against opponents worldwide.</p>
+        </div>
+        <div class="offer-item">
+          <i class="fa-solid fa-trophy"></i>
+          <h4>Grand Tournaments</h4>
+          <p>Join paid and free knockout tournaments with massive prize pools.</p>
+        </div>
+        <div class="offer-item">
+          <i class="fa-solid fa-ranking-star"></i>
+          <h4>Leaderboards</h4>
+          <p>Track your progress and climb the global rankings with our IQ-based system.</p>
+        </div>
+        <div class="offer-item">
+          <i class="fa-solid fa-brain"></i>
+          <h4>Practice Modes</h4>
+          <p>Sharpen your opening and endgame strategies with dedicated practice tools.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY CHOOSE US -->
+    <section class="why-section">
+      <h2 class="card-title" style="font-size: 32px">Why Choose PHOENIX X?</h2>
+      <p class="card-text" style="max-width: 600px; margin: 0 auto">The ultimate choice for the modern strategist.</p>
+      
+      <div class="why-grid">
+        <div class="why-item">
+          <h5>Fast</h5>
+          <span>Lag-free engine</span>
+        </div>
+        <div class="why-item">
+          <h5>Fair</h5>
+          <span>Anti-cheat system</span>
+        </div>
+        <div class="why-item">
+          <h5>Secure</h5>
+          <span>Safe transactions</span>
+        </div>
+        <div class="why-item">
+          <h5>Active</h5>
+          <span>Pro community</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-box">
+      <h2 class="offer-title">Ready to Make Your Move?</h2>
+      <a href="/pages/dashboard.html" class="btn-play">JOIN THE GAME</a>
+    </section>
+
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // Load Sidebar
+    fetch('/components/sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById('sidebar-container').innerHTML = html;
+        if(typeof initSidebar === 'function') initSidebar();
+      });
+  </script>
+</body>
+
+</html>
