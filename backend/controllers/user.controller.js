@@ -25,13 +25,36 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { username: rawUsername, full_name, phone, profile_image } = req.body;
+    const { username: rawUsername, full_name, phone } = req.body;
     const updates = {};
 
+    // 1. Handle Avatar Upload if file exists
+    if (req.file) {
+      const file = req.file;
+      const fileExt = file.originalname.split('.').pop();
+      const fileName = `${req.user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Avatar upload error:', uploadError);
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        updates.profile_image = publicUrl;
+      }
+    }
+
+    // 2. Handle Username
     if (rawUsername) {
       const username = normalizeUsername(rawUsername);
       if (!isValidUsername(username)) {
-        return res.status(400).json({ success: false, message: 'Username must be @username format: 4-20 characters (a-z, 0-9, underscore), no spaces.' });
+        return res.status(400).json({ success: false, message: 'Username must be @username format: 4-20 characters.' });
       }
       if (username !== req.user.username) {
         const { data: exists } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle();
@@ -40,14 +63,21 @@ const updateProfile = async (req, res) => {
       updates.username = username;
     }
 
+    // 3. Handle Other Fields
     if (full_name !== undefined) updates.full_name = full_name;
     if (phone !== undefined) updates.phone = phone;
-    if (profile_image !== undefined) updates.profile_image = profile_image;
+
+    if (Object.keys(updates).length === 0) {
+        return res.json({ success: true, message: 'No changes detected.' });
+    }
+
     const { data, error } = await supabase.from('profiles').update(updates).eq('id', req.user.id).select().single();
     if (error) return res.status(400).json({ success: false, message: error.message });
-    res.json({ success: true, message: 'Profile updated.', user: data });
+    
+    res.json({ success: true, message: 'Profile updated successfully!', user: data });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error.' });
+    console.error('updateProfile error:', err);
+    res.status(500).json({ success: false, message: 'Server error during update.' });
   }
 };
 
