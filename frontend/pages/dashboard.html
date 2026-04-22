@@ -243,7 +243,10 @@
         // 5. Connect Real-time
         initRealtime(user);
 
-        // 6. Hide overlay
+        // 6. Background Sync (Every 5 seconds)
+        setInterval(() => loadDashboardData(), 5000);
+
+        // 7. Hide overlay
         document.getElementById('sync-overlay').classList.add('hidden');
 
       } catch (err) {
