@@ -35,28 +35,25 @@
     /* HERO */
     .hero {
       text-align: center;
-      margin-bottom: 120px;
+      margin-bottom: 100px;
     }
 
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(48px, 10vw, 88px);
+      font-size: clamp(40px, 8vw, 72px);
       font-weight: 900;
-      line-height: 1;
-      margin-bottom: 24px;
-      background: linear-gradient(to bottom, #fff, #888);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #fff;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
     }
 
     .hero-title span {
-      display: block;
       color: var(--gold);
-      -webkit-text-fill-color: var(--gold);
-      font-size: 0.4em;
-      letter-spacing: 8px;
+      display: block;
+      font-size: 0.5em;
+      letter-spacing: 5px;
       text-transform: uppercase;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     .hero-sub {
@@ -67,165 +64,174 @@
       line-height: 1.6;
     }
 
-    /* SECTION HEADERS */
-    .section-header {
-      margin-bottom: 48px;
-      text-align: center;
-    }
-
-    .section-header h2 {
-      font-family: var(--font-display);
-      font-size: 32px;
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 12px;
-    }
-
-    .section-header p {
-      color: var(--text-secondary);
-      font-size: 15px;
-    }
-
-    /* GUIDE GRID */
-    .guide-grid {
+    /* QUICK STEPS */
+    .step-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 32px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
       margin-bottom: 100px;
     }
 
-    .guide-card {
+    .step-card {
       background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 24px;
-      padding: 40px;
+      border: 1px solid rgba(212, 175, 55, 0.1);
+      border-radius: 20px;
+      padding: 32px;
+      text-align: center;
       position: relative;
-      overflow: hidden;
-      transition: all 0.3s ease;
+      transition: 0.3s;
     }
 
-    .guide-card:hover {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(212, 175, 55, 0.3);
+    .step-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--gold);
       transform: translateY(-5px);
     }
 
-    .guide-icon {
-      font-size: 32px;
-      color: var(--gold);
-      margin-bottom: 24px;
-      background: rgba(212, 175, 55, 0.1);
-      width: 64px;
-      height: 64px;
+    .step-num {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: #000;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 16px;
+      font-weight: 900;
+      font-size: 14px;
+      box-shadow: 0 0 15px var(--gold-semi);
     }
 
-    .guide-card h3 {
-      font-family: var(--font-display);
-      font-size: 24px;
+    .step-icon {
+      font-size: 32px;
+      color: var(--gold);
       margin-bottom: 20px;
-      color: #fff;
     }
 
-    .guide-content {
+    .step-card h4 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .step-card p {
+      font-size: 13px;
       color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* INFO SECTIONS */
+    .info-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      margin-bottom: 100px;
+      align-items: center;
+    }
+
+    .info-content h2 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      margin-bottom: 24px;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .info-content p {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 20px;
       font-size: 15px;
-      line-height: 1.7;
     }
 
-    .guide-list {
+    .feature-list {
       list-style: none;
-      margin-top: 20px;
     }
 
-    .guide-list li {
+    .feature-list li {
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 12px;
       font-size: 14px;
-    }
-
-    .guide-list li i {
-      color: var(--gold);
-      font-size: 12px;
-    }
-
-    /* BENEFITS BANNER */
-    .benefits-banner {
-      background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
-      border: 1px solid rgba(212, 175, 55, 0.2);
-      border-radius: 32px;
-      padding: 60px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 40px;
-      margin-bottom: 100px;
-      text-align: center;
-    }
-
-    .benefit-item i {
-      font-size: 40px;
-      color: var(--gold);
-      margin-bottom: 20px;
-      display: block;
-    }
-
-    .benefit-item h4 {
-      font-size: 18px;
-      margin-bottom: 8px;
       color: #fff;
     }
 
-    .benefit-item span {
-      font-size: 12px;
+    .feature-list li i {
+      color: var(--gold);
+      font-size: 10px;
+    }
+
+    /* BENEFITS GRID */
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 100px;
+    }
+
+    .benefit-card {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .benefit-card i {
+      font-size: 24px;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    .benefit-card h5 {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .benefit-card p {
+      font-size: 11px;
       color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
     }
 
     /* CTA */
-    .cta {
+    .cta-box {
       text-align: center;
-      background: rgba(20, 20, 20, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 32px;
-      padding: 80px 40px;
-      backdrop-filter: blur(20px);
+      background: linear-gradient(rgba(212, 175, 55, 0.1), transparent);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 30px;
+      padding: 60px 20px;
     }
 
-    .btn-main {
+    .btn-play {
       background: var(--gold);
       color: #000;
-      padding: 20px 60px;
-      border-radius: 14px;
+      padding: 16px 48px;
+      border-radius: 12px;
       font-weight: 900;
-      font-size: 18px;
       text-decoration: none;
+      font-family: var(--font-display);
       display: inline-block;
-      margin-top: 32px;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 10px 40px rgba(212, 175, 55, 0.3);
+      margin-top: 24px;
+      transition: 0.3s;
+      box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
     }
 
-    .btn-main:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 0 20px 50px rgba(212, 175, 55, 0.4);
+    .btn-play:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 30px rgba(212, 175, 55, 0.4);
     }
 
     @media (max-width: 992px) {
-      .guide-grid { grid-template-columns: 1fr; }
-      .benefits-banner { grid-template-columns: 1fr 1fr; }
-    }
-
-    @media (max-width: 600px) {
-      .benefits-banner { grid-template-columns: 1fr; }
-      .about-container { padding-top: 60px; }
-      .hero-title { font-size: 48px; }
+      .info-section { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+      .feature-list { display: inline-block; text-align: left; }
+      .step-grid { grid-template-columns: 1fr; gap: 40px; }
+      .benefit-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -242,100 +248,104 @@
         The Future <span>Of Digital Chess</span>
       </h1>
       <p class="hero-sub">
-        PHOENIX X is not just a game; it's a professional ecosystem designed for competitive thinkers, where every move counts and every win is rewarded.
+        PHOENIX X is a premium arena where strategy meets real rewards. Play against global masters and elevate your game to new heights.
       </p>
     </header>
 
-    <!-- 2. CORE GUIDE -->
-    <div class="section-header">
-      <h2>Platform Overview</h2>
-      <p>Master the arena with our comprehensive guide.</p>
-    </div>
-
-    <div class="guide-grid">
-      <!-- TOURNAMENTS -->
-      <div class="guide-card">
-        <div class="guide-icon"><i class="fa-solid fa-trophy"></i></div>
-        <h3>Tournaments</h3>
-        <div class="guide-content">
-          We offer two distinct tournament paths to suit your style:
-          <ul class="guide-list">
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Free Modes:</strong> Practice your skills in 1, 3, or 5-minute formats without any entry fee. Perfect for beginners.</li>
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Paid Arena:</strong> Compete in 16-player knockout brackets with real entry fees and massive prize pools for the top winners.</li>
-          </ul>
+    <!-- 2. QUICK START GUIDE -->
+    <section>
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h2 style="font-family: var(--font-display); color: var(--gold); font-size: 24px; letter-spacing: 2px;">QUICK START GUIDE</h2>
+      </div>
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <i class="fa-solid fa-user-shield step-icon"></i>
+          <h4>Verify Identity</h4>
+          <p>Upload your Aadhaar, PAN, or Passport in the KYC section. Our team verifies accounts manually within 24 hours for maximum security.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <i class="fa-solid fa-wallet step-icon"></i>
+          <h4>Add Funds</h4>
+          <p>Deposit securely via Razorpay (UPI, Cards, NetBanking). Your wallet balance updates instantly, ready for the arena.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <i class="fa-solid fa-trophy step-icon"></i>
+          <h4>Join & Win</h4>
+          <p>Enter Free tournaments for practice or Paid tournaments for real cash prizes. All winnings are credited directly to your wallet.</p>
         </div>
       </div>
+    </section>
 
-      <!-- WALLET & DEPOSITS -->
-      <div class="guide-card">
-        <div class="guide-icon"><i class="fa-solid fa-wallet"></i></div>
-        <h3>Wallet System</h3>
-        <div class="guide-content">
-          Your digital bank on PHOENIX X is secure and lightning fast:
-          <ul class="guide-list">
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Add Funds:</strong> Use UPI, Cards, or NetBanking via our secure Razorpay gateway.</li>
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Auto-Prize:</strong> Winning a match? Your prize money is instantly credited to your wallet balance.</li>
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Fast Withdraw:</strong> Request a withdrawal anytime. Our team processes payouts with 24/7 priority.</li>
-          </ul>
+    <!-- 3. TOURNAMENT TYPES -->
+    <section class="info-section">
+      <div class="info-content">
+        <h2>Tournament Modes</h2>
+        <p>Whether you're a casual player or a grandmaster, we have the right stage for you. Our knockout brackets ensure high-stakes excitement in every round.</p>
+        <ul class="feature-list">
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>Free Mode:</strong> Practice matches without any entry fee.</li>
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>Paid Arena:</strong> Small entry fees with massive prize pools.</li>
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>Timed Games:</strong> 1, 3, 5, or 10-minute rapid chess formats.</li>
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>Real-Time:</strong> Seamless socket-based live matchmaking.</li>
+        </ul>
+      </div>
+      <div style="text-align: center;">
+        <i class="fa-solid fa-chess-board" style="font-size: 150px; color: rgba(212, 175, 55, 0.1);"></i>
+      </div>
+    </section>
+
+    <!-- 4. WALLET & PAYOUTS -->
+    <section class="info-section" style="direction: rtl;">
+      <div class="info-content" style="direction: ltr;">
+        <h2>Wallet & Withdrawals</h2>
+        <p>Transparency and speed are our priorities. Managing your funds has never been easier or more secure.</p>
+        <ul class="feature-list">
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>Instant Deposit:</strong> Powered by the secure Razorpay gateway.</li>
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>Quick Payout:</strong> Withdraw your winnings to your bank account anytime.</li>
+          <li><i class="fa-solid fa-chevron-right"></i> <strong>History:</strong> Full transaction logs for every deposit and tournament entry.</li>
+        </ul>
+      </div>
+      <div style="text-align: center;">
+        <i class="fa-solid fa-vault" style="font-size: 150px; color: rgba(212, 175, 55, 0.1);"></i>
+      </div>
+    </section>
+
+    <!-- 5. BENEFITS -->
+    <section>
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h2 style="font-family: var(--font-display); color: var(--gold); font-size: 24px; letter-spacing: 2px;">PLATFORM BENEFITS</h2>
+      </div>
+      <div class="benefit-grid">
+        <div class="benefit-card">
+          <i class="fa-solid fa-bolt"></i>
+          <h5>No Lag</h5>
+          <p>Engine optimized for 1ms response time.</p>
+        </div>
+        <div class="benefit-card">
+          <i class="fa-solid fa-shield"></i>
+          <h5>Anti-Cheat</h5>
+          <p>AI-driven fair play monitoring system.</p>
+        </div>
+        <div class="benefit-card">
+          <i class="fa-solid fa-headset"></i>
+          <h5>24/7 Support</h5>
+          <p>Priority support for all verified members.</p>
+        </div>
+        <div class="benefit-card">
+          <i class="fa-solid fa-lock"></i>
+          <h5>Legal & Safe</h5>
+          <p>100% compliant and secure platform.</p>
         </div>
       </div>
+    </section>
 
-      <!-- KYC VERIFICATION -->
-      <div class="guide-card">
-        <div class="guide-icon"><i class="fa-solid fa-id-card"></i></div>
-        <h3>KYC Verification</h3>
-        <div class="guide-content">
-          To ensure a fair and legal environment, we use a mandatory verification system:
-          <ul class="guide-list">
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Secure Docs:</strong> Upload Aadhaar, PAN, or Passport for manual verification by our security team.</li>
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Unlocking:</strong> Fully verified users gain higher withdrawal limits and access to exclusive high-stakes events.</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- SECURITY & FAIR PLAY -->
-      <div class="guide-card">
-        <div class="guide-icon"><i class="fa-solid fa-shield-halved"></i></div>
-        <h3>Fair Play Policy</h3>
-        <div class="guide-content">
-          Strategy should be pure. We take security seriously:
-          <ul class="guide-list">
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Anti-Bot:</strong> Real-time move analysis to detect chess engines and unfair assistance.</li>
-            <li><i class="fa-solid fa-circle-check"></i> <strong>Transparency:</strong> All match histories and tournament logs are publicly viewable for verification.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. BENEFITS BANNER -->
-    <div class="benefits-banner">
-      <div class="benefit-item">
-        <i class="fa-solid fa-bolt"></i>
-        <h4>1ms Latency</h4>
-        <span>Engine Speed</span>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-lock"></i>
-        <h4>Secure</h4>
-        <span>SSL Protected</span>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-headset"></i>
-        <h4>24/7 Care</h4>
-        <span>Direct Support</span>
-      </div>
-      <div class="benefit-item">
-        <i class="fa-solid fa-users"></i>
-        <h4>10k+ Players</h4>
-        <span>Global Reach</span>
-      </div>
-    </div>
-
-    <!-- 4. FINAL CTA -->
-    <section class="cta">
-      <h2 style="font-family: var(--font-display); font-size: 32px;">Ready to Start Your Journey?</h2>
-      <p style="color: var(--text-secondary); margin-top: 12px;">Join thousands of players and prove your strategic dominance today.</p>
-      <a href="/pages/dashboard.html" class="btn-main">GET STARTED NOW</a>
+    <!-- 6. FINAL CTA -->
+    <section class="cta-box">
+      <h2 style="font-family: var(--font-display); font-size: 28px;">Master the Game Today</h2>
+      <p style="color: var(--text-secondary); margin-top: 10px;">The chessboard is ready. All that's missing is you.</p>
+      <a href="/pages/dashboard.html" class="btn-play">START YOUR JOURNEY</a>
     </section>
 
   </div>
