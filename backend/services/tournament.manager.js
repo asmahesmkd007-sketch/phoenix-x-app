@@ -339,7 +339,8 @@ class TournamentManager {
             disconnectedPlayer: null
         };
 
-        if (p1Online && p2Online) match.status = 'live';
+        // Match remains in 'waiting_connect' until the first move is made in handleMove.
+        // This ensures the 3-minute clock only starts when the game actually begins.
 
         activeTournamentMatches.set(dbMatch.id, match);
         tState.matches.push(match);
