@@ -524,7 +524,7 @@
         document.getElementById('my-score').textContent = `Rank: ${myP.rank || '--'}`;
       }
 
-      const tourneyStatus = state?.status || 'live';
+      const tourneyStatus = tournamentConfig?.status || 'live';
       const isCompleted = tourneyStatus === 'completed';
       const sorted = [...players]
         .sort((a, b) => {
@@ -569,6 +569,7 @@
     async function refreshLeaderboard() {
       const res = await TournamentAPI.getById(tournamentId);
       if (res?.success) {
+        tournamentConfig = res.tournament;
         renderLeaderboard(res.tournament.players || []);
       }
     }
