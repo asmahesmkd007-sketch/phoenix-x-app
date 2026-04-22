@@ -253,7 +253,7 @@
         <div class="input-group">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <label class="input-label" style="margin-bottom:0">Password</label>
-            <a href="javascript:void(0)" onclick="openForgotModal()" style="color:var(--gold); font-size:12px; text-decoration:none; font-weight:700">Forgot Password?</a>
+            <a href="javascript:void(0)" onclick="console.log('Force opening...'); document.getElementById('forgot-modal').style.display='flex'; openForgotModal();" style="color:var(--gold); font-size:12px; text-decoration:none; font-weight:700; cursor:pointer; position:relative; z-index:100">Forgot Password?</a>
           </div>
           <div class="pwd-wrapper">
             <input type="password" id="l-pass" class="input" placeholder="Your password" required>
