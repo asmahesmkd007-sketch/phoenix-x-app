@@ -230,7 +230,7 @@ class TournamentManager {
                         username: p.profiles?.username || 'Unknown',
                         rank: p.profiles?.rank || 'Bronze',
                         score: existing ? existing.score : 0,
-                        status: existing ? existing.status : 'alive',
+                        status: existing ? existing.status : 'active',
                         slot: i + 1
                     };
                 });
@@ -240,7 +240,7 @@ class TournamentManager {
             }
         }
 
-        if (tState.players.filter(p => p.status === 'alive').length <= 1) return this.finishTournament(tState.id, tState);
+        if (tState.players.filter(p => p.status === 'active').length <= 1) return this.finishTournament(tState.id, tState);
 
         tState.matches = []; // Clear previous round matches
 
@@ -376,8 +376,11 @@ class TournamentManager {
 
         // Update status for all participants in this round
         tState.players.forEach(p => {
-            if (p.status === 'alive' && !roundWinners.has(p.user_id)) {
+            if (p.status === 'active' && !roundWinners.has(p.user_id)) {
                 p.status = 'eliminated';
+                // Update Database
+                supabase.from('tournament_players').update({ status: 'eliminated' })
+                    .eq('tournament_id', tState.id).eq('user_id', p.user_id).then(()=>{});
                 // Notify eliminated player
                 const sockets = userSockets.get(p.user_id);
                 if (sockets) {
@@ -449,6 +452,9 @@ class TournamentManager {
                 const pIdx = tState.players.findIndex(p => p.user_id === actualLoserId);
                 if (pIdx !== -1) {
                     tState.players[pIdx].status = 'eliminated';
+                    // Update Database
+                    supabase.from('tournament_players').update({ status: 'eliminated' })
+                        .eq('tournament_id', tState.id).eq('user_id', actualLoserId).then(()=>{});
                     // Update player score in tState for leaderboard
                     tState.players[pIdx].score += (actualLoserId === match.player1.userId ? match.player1.score : match.player2.score);
 
