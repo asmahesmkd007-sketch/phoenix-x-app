@@ -18,8 +18,8 @@ router.post('/logout', auth, logout);
 router.post('/refresh', refreshToken);
 router.get('/me', auth, getMe);
 
-// Forgot Password
-router.post('/forgot-password', authLimiter, forgotPassword);
-router.post('/forget-password', authLimiter, forgotPassword); // Fallback for spelling/cache
-router.post('/reset-password', authLimiter, resetPassword);
+// Forgot Password (Testing without limiter)
+router.post('/forgot-password', forgotPassword);
+router.post('/forget-password', forgotPassword); 
+router.post('/reset-password', resetPassword);
 module.exports = router;
