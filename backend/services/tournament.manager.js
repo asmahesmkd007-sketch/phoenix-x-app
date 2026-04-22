@@ -10,7 +10,9 @@ class TournamentManager {
         console.log('🚀 TournamentManager.init starting...');
         this.io = io;
         setInterval(() => this.tick(), 1000);
-        setInterval(() => this.pollLiveTournaments(), 5000);
+        
+        // HEARTBEAT: Every 10 seconds, check for stuck or new tournaments in the DB
+        setInterval(() => this.pollLiveTournaments(), 10000);
         
         // FAIL-SAFE: Check for replenishment every 3 minutes
         setInterval(() => {
