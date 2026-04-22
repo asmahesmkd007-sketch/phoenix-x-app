@@ -77,7 +77,8 @@ const joinTournament = async (req, res) => {
     if (!tournament) return res.status(404).json({ success: false, message: 'Tournament not found.' });
     
     // Only allow joining in UPCOMING status
-    if (tournament.status !== 'upcoming') return res.status(400).json({ success: false, message: 'Tournament is no longer accepting joins.' });
+    const allowedStatuses = tournament.type === 'free' ? ['upcoming', 'live'] : ['upcoming'];
+    if (!allowedStatuses.includes(tournament.status)) return res.status(400).json({ success: false, message: 'Tournament is no longer accepting joins.' });
     if (tournament.current_players >= tournament.max_players) return res.status(400).json({ success: false, message: 'Tournament is full.' });
 
     // Prevent duplicate join
