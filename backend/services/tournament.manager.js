@@ -74,7 +74,7 @@ class TournamentManager {
 
         const playersData = players.map((p, i) => ({
             user_id: p.user_id, username: p.profiles?.username || 'Unknown',
-            rank: p.profiles?.rank || 'Bronze', score: 0, status: 'alive', slot: i + 1
+            rank: p.profiles?.rank || 'Bronze', score: 0, status: 'active', slot: i + 1
         }));
 
         console.log(`📦 TournamentManager: Loaded ${playersData.length} players for TR-${t.tr_id}`);
