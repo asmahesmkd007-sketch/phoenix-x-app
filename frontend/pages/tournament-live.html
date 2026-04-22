@@ -423,6 +423,14 @@
              showLobby('Lobby Waiting Area', 'Tournament starts automatically when full.', false, false);
         }
 
+        sock.on('connect', () => {
+             console.log('🔄 Socket Reconnected. Checking for active matches...');
+             const storedMatch = localStorage.getItem(`px_active_match_${tournamentId}`);
+             if (storedMatch && user) {
+                  sock.emit('rejoin_tr_match', { matchId: storedMatch, userId: user.id });
+             }
+        });
+
         sock.on(`tournament_sync_${tournamentId}`, (data) => {
              state = data; // Update global state
              
