@@ -1076,8 +1076,8 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
       btn.disabled = true;
 
-      const baseUrl = (typeof API_BASE !== 'undefined') ? API_BASE : 
-                       (window.location.port === '5500' || window.location.port === '3000' ? 'http://localhost:5000/api' : '/api');
+      const baseUrl = (typeof API_BASE !== 'undefined' && API_BASE !== '/api') ? API_BASE : 
+                       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000/api' : '/api');
 
       try {
         const formData = new FormData();
