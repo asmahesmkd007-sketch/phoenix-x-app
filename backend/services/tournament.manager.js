@@ -521,12 +521,16 @@ class TournamentManager {
     }
 
     static async finishTournament(tId, tState) {
+        // 1. Mark as completed in DB immediately to clear from live lists
+        await supabase.from('tournaments').update({ status: 'completed', phase: 'completed' }).eq('id', tId);
+        
         tState.status = 'completed';
         this.broadcastState(tId);
-        await supabase.from('tournaments').update({ status: 'completed', phase: 'completed' }).eq('id', tId);
+
         const { distributeTournamentPrizes, autoCreatePaidTournaments } = require('../controllers/tournament.controller');
         const { data: tData } = await supabase.from('tournaments').select('*').eq('id', tId).single();
         if (tData) await distributeTournamentPrizes(tData);
+        
         activeTourneys.delete(tId);
         autoCreatePaidTournaments().catch(() => {});
     }
