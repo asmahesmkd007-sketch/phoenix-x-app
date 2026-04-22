@@ -1008,7 +1008,7 @@
         document.getElementById('edit-username').value = u.username;
         document.getElementById('edit-fullname').value = u.full_name || '';
         document.getElementById('edit-email').value = u.email || 'undefined';
-
+        document.getElementById('edit-phone').value = u.phone || '';
         if (typeof updateSidebarUI === 'function') updateSidebarUI(u);
       }
       if (s.success) {
@@ -1066,8 +1066,41 @@
     async function saveProfile() {
       const username = document.getElementById('edit-username').value.replace('@', '');
       const full_name = document.getElementById('edit-fullname').value;
-      const res = await api('/user/update-profile', { method: 'POST', body: JSON.stringify({ username, full_name }) });
-      if (res.success) { Toast.success('Profile updated!'); loadProfileData(); }
+      const phone = document.getElementById('edit-phone').value;
+      const fileInput = document.getElementById('file-upload');
+      
+      const btn = document.querySelector('#pane-profile .btn-action');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
+      btn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('full_name', full_name);
+        formData.append('phone', phone);
+        if (fileInput.files[0]) formData.append('avatar', fileInput.files[0]);
+
+        // Using fetch directly because 'api' helper might not handle FormData automatically
+        const res = await fetch(`${API_URL}/user/update-profile`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${getToken()}` },
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+           Toast.success('Profile updated successfully!');
+           loadProfileData();
+        } else {
+           Toast.error(data.message || 'Update failed');
+        }
+      } catch (e) {
+        Toast.error('Network Error');
+      }
+      
+      btn.innerHTML = originalText;
+      btn.disabled = false;
     }
 
     /* KYC LOGIC */
@@ -1279,7 +1312,7 @@
       try {
         const res = await api('/user/change-password', {
           method: 'POST',
-          body: { old_password: current, new_password: newPwd }
+          body: JSON.stringify({ old_password: current, new_password: newPwd })
         });
 
         if (res.success) {
