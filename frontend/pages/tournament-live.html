@@ -247,7 +247,9 @@
               <div style="font-size: 11px; letter-spacing: 1px; color: var(--text-muted);">TIME REMAINING</div>
               <div class="countdown-timer" id="global-timer">--:--</div>
             </div>
-            <div style="font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--border);">Live Leaderboard
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+              <div style="font-weight: 600;">Leaderboard</div>
+              <div id="round-label" style="font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase;">ROUND --</div>
             </div>
             <div class="leaderboard-list" id="leaderboard">
               <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Loading...</div>
@@ -524,6 +526,10 @@
       const myP = players.find(p => (p.user_id?.id || p.user_id) === user.id);
       if (myP) {
         document.getElementById('my-score').textContent = `Rank: ${myP.rank || '--'}`;
+      }
+
+      if (tournamentConfig && tournamentConfig.round) {
+          document.getElementById('round-label').textContent = `ROUND ${tournamentConfig.round}`;
       }
 
       const tourneyStatus = tournamentConfig?.status || 'live';
