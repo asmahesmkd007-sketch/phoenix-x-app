@@ -145,6 +145,10 @@
       box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
     }
 
+    .highlight-last-move {
+      background-color: rgba(255, 255, 0, 0.3) !important; /* Soft Yellow like chess.com */
+    }
+
     .highlight-move {
       position: relative;
     }
@@ -684,12 +688,23 @@
 
       const move = chess.move({ from: source, to: target, promotion: 'q' });
       if (move === null) return 'snapback';
+      highlightLastMove(source, target);
       SocketActions.makeTrMove(matchId, move, user.id);
       updatePlayerBars();
     }
 
     function removeGreySquares() {
       $('#board .square-55d63').removeClass('highlight-move highlight-capture highlight-selected');
+    }
+
+    function removeLastMoveHighlights() {
+      $('#board .square-55d63').removeClass('highlight-last-move');
+    }
+
+    function highlightLastMove(from, to) {
+      removeLastMoveHighlights();
+      $('#board .square-' + from).addClass('highlight-last-move');
+      $('#board .square-' + to).addClass('highlight-last-move');
     }
 
     function greySquare(square, isCapture = false) {
@@ -722,6 +737,7 @@
           if (move) {
               board.position(chess.fen());
               removeGreySquares();
+              highlightLastMove(selectedSquare, square);
               selectedSquare = null;
               SocketActions.makeTrMove(matchId, move, user.id);
               updatePlayerBars();
@@ -842,7 +858,14 @@
     }
 
     sock.on('move_made', (data) => {
-      if (data.fen) { chess.load(data.fen); board.position(data.fen); updatePlayerBars(); }
+      if (data.fen) { 
+          chess.load(data.fen); 
+          board.position(data.fen); 
+          updatePlayerBars(); 
+          if (data.move) {
+              highlightLastMove(data.move.from, data.move.to);
+          }
+      }
     });
     sock.on('timer_update', (data) => {
       myTime = myColor === 'white' ? data.white_time : data.black_time;
