@@ -572,7 +572,7 @@ class TournamentManager {
         else if (match.player2.userId === userId) { match.player2.socketId = socket.id; match.player2.connected = true; }
         else return false;
 
-        if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) match.status = 'live';
+        // Status remains 'waiting_connect' until first move.
         socket.join(match.roomId);
         socket.emit('match_rejoined', {
             roomId: match.roomId, fen: match.chess.fen(), turn: match.turn,
