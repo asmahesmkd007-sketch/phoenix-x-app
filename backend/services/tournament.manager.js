@@ -196,17 +196,8 @@ class TournamentManager {
 
             // Sync Match Timers if they are active
             tState.matches.forEach(m => {
-                if (m.status === 'waiting_connect') {
-                    m.connectTimeout--;
-                    if (m.connectTimeout <= 0) {
-                        const p1Online = m.player1.connected;
-                        const p2Online = m.player2.connected;
-                        console.log(`⏰ Connect timeout for match ${m.id}. P1:${p1Online}, P2:${p2Online}`);
-                        if (p1Online && !p2Online) this.resolveMatch(m.id, 'player1_win', m.player1.userId, 'opponent_no_show');
-                        else if (!p1Online && p2Online) this.resolveMatch(m.id, 'player2_win', m.player2.userId, 'opponent_no_show');
-                        else this.resolveMatch(m.id, 'draw', null, 'both_no_show');
-                    }
-                }
+                // NO-SHOW TIMEOUT REMOVED as per user request.
+                // Matches will only resolve via 3-min clock or game end.
             });
         });
 
