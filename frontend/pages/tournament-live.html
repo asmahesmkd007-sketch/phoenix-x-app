@@ -478,8 +478,10 @@
                   refreshLeaderboard();
              } else if (state.status === 'completed') {
                   if (globalCountdownInterval) clearInterval(globalCountdownInterval);
-                  showLobby('Tournament Ended', 'All rounds completed!', false);
-                  setTimeout(()=> refreshLeaderboard(), 2000);
+                  showLobby('Tournament Ended', 'All rounds completed! Redirecting in 5s...', false, false);
+                  setTimeout(() => {
+                      window.location.href = '/dashboard';
+                  }, 5000);
              }
         });
         
