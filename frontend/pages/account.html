@@ -1092,8 +1092,9 @@
         
         async function attemptSave() {
             try {
-                const res = await fetch(`${baseUrl}/user/update-profile`, {
-                    method: 'POST',
+                // Corrected endpoint and method to match user.routes.js
+                const res = await fetch(`${baseUrl}/user/profile`, {
+                    method: 'PUT',
                     headers: { 'Authorization': `Bearer ${getToken()}` },
                     body: formData
                 });
