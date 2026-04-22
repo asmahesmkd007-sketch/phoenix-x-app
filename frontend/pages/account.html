@@ -166,121 +166,161 @@
       border-color: #3498db;
     }
 
-    /* TWO COLUMN LAYOUT */
+    /* --- PREMIUM ACCOUNT STYLES --- */
     .account-layout {
       display: flex;
-      gap: 30px;
-      align-items: flex-start;
+      gap: 32px;
+      margin-top: 24px;
     }
-
     .account-sidebar {
-      width: 220px;
+      width: 260px;
       flex-shrink: 0;
     }
-
     .account-main {
       flex: 1;
     }
-
-    /* TABS */
-    .tab-bar {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 25px;
-    }
-
-    .tab-btn {
-      background: #111;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      color: #888;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      width: 100%;
-      text-align: left;
-      gap: 12px;
-      transition: 0.2s;
-    }
-
-    .tab-btn:hover {
-      background: rgba(255, 255, 255, 0.02);
-      color: #fff;
-    }
-
-    .tab-btn.active {
-      background: rgba(212, 175, 55, 0.1);
-      border-color: rgba(212, 175, 55, 0.3);
-      color: var(--gold);
-    }
-
-    /* SECTION CARDS */
-    .section-card {
-      background: rgba(15, 15, 15, 0.5);
+    .glass-card {
+      background: rgba(20, 20, 20, 0.6);
+      backdrop-filter: blur(12px);
       border: 1px solid rgba(212, 175, 55, 0.15);
-      border-radius: 12px;
-      padding: 20px 25px;
-      margin-bottom: 25px;
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
     }
-
-    .section-header {
-      font-size: 10px;
-      color: var(--gold);
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      margin-bottom: 20px;
+    .profile-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 32px;
+      padding: 40px;
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(0, 0, 0, 0.4));
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 24px;
+      margin-bottom: 32px;
     }
-
-    .section-header::before {
-      content: '';
-      width: 3px;
-      height: 12px;
+    .p-avatar-wrap {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+    .p-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 4px solid var(--gold);
+      object-fit: cover;
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+    .p-avatar-edit {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
       background: var(--gold);
-      display: inline-block;
+      color: #000;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      border: 3px solid #000;
     }
-
-    /* FORMS */
-    .form-item {
-      margin-bottom: 15px;
-    }
-
-    .form-label {
-      font-size: 10px;
-      color: var(--gold);
-      font-weight: 700;
+    .p-info h1 {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 900;
+      color: #fff;
       margin-bottom: 8px;
+    }
+    .p-badges {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .p-badge {
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .badge-rank { background: rgba(212, 175, 55, 0.15); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-iq { background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid #3498db; }
+    .badge-kyc { background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid #2ecc71; }
+
+    .form-section-title {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--gold);
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .form-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, rgba(212, 175, 55, 0.3), transparent);
+    }
+
+    .custom-input-group {
+      margin-bottom: 24px;
+    }
+    .custom-label {
       display: block;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 8px;
+      font-weight: 700;
       text-transform: uppercase;
     }
-
-    .form-input {
+    .custom-input {
       width: 100%;
-      padding: 12px;
-      padding-right: 40px !important;
-      background: #080808;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1.5px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 14px 18px;
       color: #fff;
-      font-size: 13px;
+      font-size: 15px;
+      transition: 0.3s;
     }
-
-    .pwd-wrapper { position: relative; width: 100%; }
-    .pwd-toggle { 
-      position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
-      cursor: pointer; color: #666; transition: 0.2s; z-index: 5;
+    .custom-input:focus {
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.03);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+      outline: none;
     }
-    .pwd-toggle:hover { color: var(--gold); }
-
-    .form-input:disabled {
+    .custom-input:disabled {
+      background: rgba(255, 255, 255, 0.02);
       color: #555;
+      cursor: not-allowed;
+    }
+
+    .btn-save {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 40px;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
     }
 
     .file-upload-box {
@@ -612,29 +652,26 @@
           ACCOUNT & KYC
         </div>
 
-        <!-- 1. PROFILE BANNER -->
-        <div class="premium-banner">
-          <div class="pb-left">
-            <div class="avatar-wrapper">
-              <div class="pb-avatar" id="pb-avatar">P</div>
-              <div class="edit-icon"><i class="fa-solid fa-pencil"></i></div>
-            </div>
-            <div class="pb-info">
-              <h2 id="pb-username">...</h2>
-              <div class="pb-meta">
-                <span class="m-badge m-rank" id="pb-rank">...</span>
-                <span class="m-iq">IQ: <span id="pb-iq">...</span></span>
-                <span class="m-badge m-kyc" id="pb-kyc-badge" style="display:none"><i class="fa-solid fa-check"></i> KYC
-                  Verified</span>
-              </div>
+        <!-- 1. PROFILE HEADER -->
+        <div class="profile-header">
+          <div class="p-avatar-wrap">
+            <div id="pb-avatar" class="p-avatar-placeholder" style="width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#111; font-size:40px; font-weight:900; color:var(--gold); border:4px solid var(--gold)">P</div>
+            <label for="file-upload" class="p-avatar-edit">
+              <i class="fa-solid fa-camera"></i>
+            </label>
+            <input type="file" id="file-upload" hidden onchange="handlePreview(this)">
+          </div>
+          <div class="p-info">
+            <h1 id="pb-username">@player</h1>
+            <div class="p-badges">
+              <span class="p-badge badge-rank" id="pb-rank">Bronze</span>
+              <span class="p-badge badge-iq">IQ: <span id="pb-iq">100</span></span>
+              <span class="p-badge badge-kyc" id="pb-kyc-badge" style="display:none">Verified</span>
             </div>
           </div>
-          <div class="pb-right">
-            <div class="pb-label">PLAYER ID</div>
-            <div class="pb-pid" id="pb-pid">...</div>
-            <button class="copy-btn" onclick="copyPID()">
-              <i class="fa-solid fa-briefcase"></i> Copy
-            </button>
+          <div style="margin-left:auto; text-align:right">
+            <div style="font-size:10px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px">Player ID</div>
+            <div style="font-family:var(--font-display); font-size:22px; color:var(--gold); font-weight:900" id="pb-pid">PX-000000</div>
           </div>
         </div>
 
@@ -658,44 +695,53 @@
           <!-- RIGHT: MAIN CONTENT -->
           <div class="account-main">
 
-            <!-- 3. EDIT PROFILE SECTION -->
-            <div class="section-card" id="pane-profile">
-              <div class="section-header">EDIT PROFILE</div>
+            <!-- 2. PROFILE PANE -->
+            <div id="pane-profile" class="pane-content active">
+              <div class="glass-card">
+                <div class="form-section-title">Edit Profile Information</div>
+                
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px; margin-bottom:24px;">
+                  <div class="custom-input-group">
+                    <label class="custom-label">Username</label>
+                    <input type="text" id="edit-username" class="custom-input" placeholder="@username">
+                  </div>
+                  <div class="custom-input-group">
+                    <label class="custom-label">Full Name</label>
+                    <input type="text" id="edit-fullname" class="custom-input" placeholder="Your Name">
+                  </div>
+                  <div class="custom-input-group">
+                    <label class="custom-label">Email Address (Locked)</label>
+                    <input type="text" id="edit-email" class="custom-input" disabled>
+                  </div>
+                  <div class="custom-input-group">
+                    <label class="custom-label">Phone Number</label>
+                    <input type="tel" id="edit-phone" class="custom-input" placeholder="+91 00000 00000">
+                  </div>
+                </div>
 
-              <div class="form-item">
-                <label class="form-label">USERNAME</label>
-                <input type="text" id="edit-username" class="form-input" value="...">
+                <button class="btn-save" onclick="saveProfile()">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
               </div>
 
-              <div class="form-item">
-                <label class="form-label">FULL NAME</label>
-                <input type="text" id="edit-fullname" class="form-input" value="...">
-              </div>
-
-              <div class="form-item">
-                <label class="form-label">PROFILE PICTURE</label>
-                <div class="file-upload-box">
-                  <img src="/assets/default-avatar.png" class="preview-circle" id="edit-preview">
-                  <input type="file" id="file-upload" style="display:none" onchange="handlePreview(this)">
-                  <label for="file-upload" class="file-info-text">Choose file | No file chosen</label>
+              <!-- STATS SECTION (Integrated into profile view) -->
+              <div class="glass-card" id="pane-stats">
+                <div class="form-section-title">Gaming Statistics</div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:16px;">
+                  <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px; text-align:center; border:1px solid rgba(255,255,255,0.05)">
+                    <div style="font-size:10px; color:#888; margin-bottom:8px">IQ LEVEL</div>
+                    <div id="stat-iq" style="font-size:24px; font-weight:900; color:#fff">145</div>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px; text-align:center; border:1px solid rgba(255,255,255,0.05)">
+                    <div style="font-size:10px; color:#888; margin-bottom:8px">TOTAL MATCHES</div>
+                    <div id="stat-matches" style="font-size:24px; font-weight:900; color:#fff">11</div>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.03); padding:20px; border-radius:16px; text-align:center; border:1px solid rgba(255,255,255,0.05)">
+                    <div style="font-size:10px; color:#888; margin-bottom:8px">WIN RATE</div>
+                    <div id="stat-winrate" style="font-size:24px; font-weight:900; color:var(--gold)">45%</div>
+                  </div>
                 </div>
               </div>
-
-              <div class="form-item">
-                <label class="form-label">EMAIL ADDRESS</label>
-                <input type="text" id="edit-email" class="form-input" disabled value="undefined">
-                <span style="font-size:10px; color:#2ecc71; margin-top:5px; display:block">Email cannot be changed for
-                  security reasons</span>
-              </div>
-
-              <div class="form-item">
-                <label class="form-label">PHONE NUMBER</label>
-                <input type="text" id="edit-phone" class="form-input" value="...">
-              </div>
-
-              <button class="btn-action" onclick="saveProfile()">
-                <i class="fa-solid fa-save"></i> SAVE CHANGES
-              </button>
             </div>
 
             <!-- 4. KYC SECTION -->
@@ -921,44 +967,48 @@
               </div>
             </div>
 
-            <!-- 6. SECURITY SECTION -->
-            <div class="section-card" id="pane-security" style="display:none">
-              <div class="section-header">CHANGE PASSWORD</div>
+            <!-- 4. SECURITY PANE -->
+            <div id="pane-security" class="pane-content" style="display:none">
+              <div class="glass-card">
+                <div class="form-section-title">Security & Credentials</div>
+                
+                <div class="custom-input-group">
+                  <label class="custom-label">Current Password</label>
+                  <div class="pwd-wrapper">
+                    <input type="password" id="sec-current-pwd" class="custom-input">
+                    <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-current-pwd', this)"></i>
+                  </div>
+                </div>
 
-              <div class="form-item">
-                <label class="form-label">CURRENT PASSWORD</label>
-                <div class="pwd-wrapper">
-                  <input type="password" id="sec-current-pwd" class="form-input" placeholder="Current password">
-                  <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-current-pwd', this)"></i>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px; margin-bottom:24px;">
+                  <div class="custom-input-group">
+                    <label class="custom-label">New Password</label>
+                    <div class="pwd-wrapper">
+                      <input type="password" id="sec-new-pwd" class="custom-input">
+                      <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-new-pwd', this)"></i>
+                    </div>
+                  </div>
+                  <div class="custom-input-group">
+                    <label class="custom-label">Confirm New Password</label>
+                    <div class="pwd-wrapper">
+                      <input type="password" id="sec-confirm-pwd" class="custom-input">
+                      <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-confirm-pwd', this)"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="btn-save" onclick="changePassword()">
+                  <i class="fa-solid fa-shield-check"></i> Update Password
+                </button>
+
+                <div style="margin-top:40px; border-top:1px solid rgba(255,255,255,0.05); padding-top:32px">
+                   <div class="form-section-title" style="color:#e74c3c">Emergency Logout</div>
+                   <p style="font-size:12px; color:#888; margin-bottom:20px">Log out from all other devices to secure your account.</p>
+                   <button class="btn-save" onclick="logoutAllDevices()" style="background:rgba(231, 76, 60, 0.1); border:1px solid rgba(231, 76, 60, 0.3); color:#e74c3c">
+                     <i class="fa-solid fa-door-open"></i> Logout from All Devices
+                   </button>
                 </div>
               </div>
-              <div class="form-item">
-                <label class="form-label">NEW PASSWORD</label>
-                <div class="pwd-wrapper">
-                  <input type="password" id="sec-new-pwd" class="form-input" placeholder="Min 6 characters">
-                  <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-new-pwd', this)"></i>
-                </div>
-              </div>
-              <div class="form-item">
-                <label class="form-label">CONFIRM NEW PASSWORD</label>
-                <div class="pwd-wrapper">
-                  <input type="password" id="sec-confirm-pwd" class="form-input" placeholder="Repeat new password">
-                  <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-confirm-pwd', this)"></i>
-                </div>
-              </div>
-              <button class="btn-action" onclick="changePassword()"
-                style="width: auto; padding: 12px 24px; margin-top: 20px; display: inline-flex;">
-                <i class="fa-solid fa-lock"></i> UPDATE PASSWORD
-              </button>
-
-              <div style="border-top: 1px solid rgba(255,255,255,0.05); margin: 30px 0;"></div>
-
-              <div class="section-header">SESSION MANAGEMENT</div>
-              <p style="font-size:12px; color:#aaa; margin-bottom:15px;">Log out from all devices for security.</p>
-              <button class="btn-action" onclick="logoutAllDevices()"
-                style="width: auto; background: rgba(231, 76, 60, 0.05); border-color: rgba(231, 76, 60, 0.3); color: #e74c3c; display: inline-flex; padding: 10px 20px;">
-                <i class="fa-solid fa-door-open"></i> Logout from All Devices
-              </button>
             </div>
           </div>
         </div>
