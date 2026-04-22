@@ -1,7 +1,7 @@
 // ===== auth.routes.js =====
 const express = require('express');
 const router = express.Router();
-const { register, login, logout, refreshToken, getMe, oauthLogin } = require('../controllers/auth.controller');
+const { register, login, logout, refreshToken, getMe, oauthLogin, forgotPassword, resetPassword } = require('../controllers/auth.controller');
 const auth = require('../middleware/auth.middleware');
 const rateLimit = require('express-rate-limit');
 
@@ -17,4 +17,8 @@ router.post('/oauth-login', authLimiter, oauthLogin);
 router.post('/logout', auth, logout);
 router.post('/refresh', refreshToken);
 router.get('/me', auth, getMe);
+
+// Forgot Password
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 module.exports = router;

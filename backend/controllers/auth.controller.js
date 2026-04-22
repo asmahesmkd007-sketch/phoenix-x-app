@@ -292,4 +292,80 @@ const oauthLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, refreshToken, getMe, oauthLogin };
+const { sendOTPEmail } = require('../config/mailer');
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
+
+    // Check if user exists
+    const { data: user, error: userErr } = await supabase.auth.admin.listUsers();
+    const foundUser = user.users.find(u => u.email === email);
+    if (!foundUser) return res.status(404).json({ success: false, message: 'No account found with this email.' });
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    // Save to OTP table
+    const { error: otpErr } = await supabase.from('otps').upsert({
+      email,
+      otp,
+      expires_at
+    }, { onConflict: 'email' });
+
+    if (otpErr) return res.status(400).json({ success: false, message: 'Failed to generate OTP.' });
+
+    // Send Email
+    await sendOTPEmail(email, otp);
+
+    res.json({ success: true, message: 'OTP sent to your email.' });
+  } catch (err) {
+    console.error('forgotPassword error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) return res.status(400).json({ success: false, message: 'All fields required.' });
+
+    // Verify OTP
+    const { data: otpData, error: otpErr } = await supabase
+      .from('otps')
+      .select('*')
+      .eq('email', email)
+      .eq('otp', otp)
+      .maybeSingle();
+
+    if (otpErr || !otpData) return res.status(400).json({ success: false, message: 'Invalid or expired OTP.' });
+
+    // Check expiry
+    if (new Date(otpData.expires_at) < new Date()) {
+      return res.status(400).json({ success: false, message: 'OTP has expired.' });
+    }
+
+    // Reset password in Supabase Auth
+    const { data: userList } = await supabase.auth.admin.listUsers();
+    const foundUser = userList.users.find(u => u.email === email);
+    if (!foundUser) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const { error: resetErr } = await supabase.auth.admin.updateUserById(foundUser.id, {
+      password: newPassword
+    });
+
+    if (resetErr) return res.status(400).json({ success: false, message: resetErr.message });
+
+    // Delete used OTP
+    await supabase.from('otps').delete().eq('email', email);
+
+    res.json({ success: true, message: 'Password reset successful.' });
+  } catch (err) {
+    console.error('resetPassword error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+module.exports = { register, login, logout, refreshToken, getMe, oauthLogin, forgotPassword, resetPassword };

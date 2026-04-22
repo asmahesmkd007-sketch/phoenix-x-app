@@ -264,12 +264,20 @@
     .form-input {
       width: 100%;
       padding: 12px;
+      padding-right: 40px !important;
       background: #080808;
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 6px;
       color: #fff;
       font-size: 13px;
     }
+
+    .pwd-wrapper { position: relative; width: 100%; }
+    .pwd-toggle { 
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
+      cursor: pointer; color: #666; transition: 0.2s; z-index: 5;
+    }
+    .pwd-toggle:hover { color: var(--gold); }
 
     .form-input:disabled {
       color: #555;
@@ -919,15 +927,24 @@
 
               <div class="form-item">
                 <label class="form-label">CURRENT PASSWORD</label>
-                <input type="password" id="sec-current-pwd" class="form-input" placeholder="Current password">
+                <div class="pwd-wrapper">
+                  <input type="password" id="sec-current-pwd" class="form-input" placeholder="Current password">
+                  <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-current-pwd', this)"></i>
+                </div>
               </div>
               <div class="form-item">
                 <label class="form-label">NEW PASSWORD</label>
-                <input type="password" id="sec-new-pwd" class="form-input" placeholder="Min 6 characters">
+                <div class="pwd-wrapper">
+                  <input type="password" id="sec-new-pwd" class="form-input" placeholder="Min 6 characters">
+                  <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-new-pwd', this)"></i>
+                </div>
               </div>
               <div class="form-item">
                 <label class="form-label">CONFIRM NEW PASSWORD</label>
-                <input type="password" id="sec-confirm-pwd" class="form-input" placeholder="Repeat new password">
+                <div class="pwd-wrapper">
+                  <input type="password" id="sec-confirm-pwd" class="form-input" placeholder="Repeat new password">
+                  <i class="fa-solid fa-eye pwd-toggle" onclick="togglePwd('sec-confirm-pwd', this)"></i>
+                </div>
               </div>
               <button class="btn-action" onclick="changePassword()"
                 style="width: auto; padding: 12px 24px; margin-top: 20px; display: inline-flex;">
@@ -1363,6 +1380,17 @@
         } catch (e) { }
         localStorage.clear();
         window.location.href = '/pages/login.html';
+      }
+    }
+
+    function togglePwd(id, icon) {
+      const input = document.getElementById(id);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
       }
     }
 
