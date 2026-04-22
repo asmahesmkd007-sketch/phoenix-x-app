@@ -299,10 +299,33 @@ const forgotPassword = async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
-    // Check if user exists
-    const { data: user, error: userErr } = await supabase.auth.admin.listUsers();
-    const foundUser = user.users.find(u => u.email === email);
-    if (!foundUser) return res.status(404).json({ success: false, message: 'No account found with this email.' });
+    // Check if user exists (Robust search)
+    console.log(`[AUTH] Checking existence for: ${email}`);
+    
+    // First try Auth Admin API
+    const { data: userListData, error: listError } = await supabase.auth.admin.listUsers();
+    if (listError) {
+      console.error('[AUTH] Supabase Auth error:', listError);
+      return res.status(500).json({ success: false, message: 'Auth service error.' });
+    }
+
+    let foundUser = userListData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    // Fallback: Check profiles table if Auth API fails to find (sometimes due to pagination or indexing)
+    if (!foundUser) {
+      console.log(`[AUTH] Not found in Auth list, checking profiles table...`);
+      const { data: profileData } = await supabase.from('profiles').select('id, email').eq('email', email).maybeSingle();
+      if (profileData) {
+        foundUser = { id: profileData.id, email: profileData.email };
+      }
+    }
+
+    if (!foundUser) {
+      console.warn(`[AUTH] User not found in system: ${email}`);
+      return res.status(404).json({ success: false, message: 'No account found with this email.' });
+    }
+
+    console.log(`[AUTH] Found user: ${foundUser.id} (${foundUser.email})`);
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
