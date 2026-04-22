@@ -21,5 +21,6 @@ router.get('/me', auth, getMe);
 // Forgot Password (Testing without limiter)
 router.post('/forgot-password', forgotPassword);
 router.post('/forget-password', forgotPassword); 
+router.post('/otp-recovery', forgotPassword); // NEW ALTERNATIVE PATH
 router.post('/reset-password', resetPassword);
 module.exports = router;

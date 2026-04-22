@@ -99,7 +99,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     platform: 'PHOENIX X', 
-    version: '1.0.3-limiter-removed',
+    version: '1.0.4-recovery-path',
     timestamp: new Date() 
   });
 });
