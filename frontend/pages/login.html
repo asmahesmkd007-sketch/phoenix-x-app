@@ -345,9 +345,15 @@
 
     // ─── FORGOT PASSWORD ──────────────────────────────────
     function openForgotModal() {
-      document.getElementById('forgot-modal').style.display = 'flex';
-      document.getElementById('forgot-step-1').style.display = 'block';
-      document.getElementById('forgot-step-2').style.display = 'none';
+      console.log('Opening Forgot Password Modal...');
+      const modal = document.getElementById('forgot-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('forgot-step-1').style.display = 'block';
+        document.getElementById('forgot-step-2').style.display = 'none';
+      } else {
+        console.error('Forgot Modal not found in DOM!');
+      }
     }
     function closeForgotModal() {
       document.getElementById('forgot-modal').style.display = 'none';
