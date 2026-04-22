@@ -339,8 +339,7 @@ class TournamentManager {
             disconnectedPlayer: null
         };
 
-        // Match remains in 'waiting_connect' until the first move is made in handleMove.
-        // This ensures the 3-minute clock only starts when the game actually begins.
+        if (p1Online && p2Online) match.status = 'live';
 
         activeTournamentMatches.set(dbMatch.id, match);
         tState.matches.push(match);
@@ -572,7 +571,7 @@ class TournamentManager {
         else if (match.player2.userId === userId) { match.player2.socketId = socket.id; match.player2.connected = true; }
         else return false;
 
-        // Status remains 'waiting_connect' until first move.
+        if (match.status === 'waiting_connect' && match.player1.connected && match.player2.connected) match.status = 'live';
         socket.join(match.roomId);
         socket.emit('match_rejoined', {
             roomId: match.roomId, fen: match.chess.fen(), turn: match.turn,
